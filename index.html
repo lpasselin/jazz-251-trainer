@@ -163,7 +163,7 @@
        then weight it in the exercises box: <code>myturn Bb 80</code>.</p>
     <p>Keys use <code>#</code>/<code>b</code> (C, F#, Bb…). Lines starting with <code>#</code> are comments.
        The preset pills below overwrite the exercises box — difficulty levels first,
-       then famous players' favorite changes.
+       then famous players' favorite changes, then non-jazz styles.
        Tap the card, press Space, or use ◀/▶ (or ←/→) to move; ◀ scrolls back through
        everything shown this session. <em>auto-next</em> is seconds per chord symbol —
        at 1.2, a 3-chord exercise advances after 3.6 s (0 = off).
@@ -274,6 +274,16 @@ lady       Ladybird turnaround          = Imaj7 bIIImaj7 bVImaj7 bIImaj7
 coltrane   Coltrane cycle               = Imaj7 bIII7 bVImaj7 VII7 IIImaj7 V7 Imaj7
 sowhat     Modal vamp ii-iii            = IIm7 IIIm7
 countdown  Countdown ii-V-I             = IIm7 bIII7 bVImaj7 VII7 IIImaj7 V7 Imaj7
+
+# Beyond jazz
+pop4       Pop I-V-vi-IV                = I V VIm IV
+doowop     50s doo-wop I-vi-IV-V        = I VIm IV V
+axis       Axis vi-IV-I-V               = VIm IV I V
+andalus    Andalusian i-bVII-bVI-V      = Im bVII bVI V7
+145        I-IV-V                       = I IV V7
+736        Gospel 7-3-6                 = VIIm7b5 III7b9 VIm7
+canon      Pachelbel canon              = I V VIm IIIm IV I IV V
+blues12    12-bar blues                 = I7 IV7 I7 I7 IV7 IV7 I7 I7 V7 IV7 I7 V7
 `;
 
 /* ---------- config ---------- */
@@ -626,6 +636,118 @@ countdown A 0
 countdown D 0
 countdown G 0
 
+# Pop I-V-vi-IV
+pop4 C 0
+pop4 F 0
+pop4 Bb 0
+pop4 Eb 0
+pop4 Ab 0
+pop4 Db 0
+pop4 Gb 0
+pop4 B 0
+pop4 E 0
+pop4 A 0
+pop4 D 0
+pop4 G 0
+
+# 50s doo-wop I-vi-IV-V
+doowop C 0
+doowop F 0
+doowop Bb 0
+doowop Eb 0
+doowop Ab 0
+doowop Db 0
+doowop Gb 0
+doowop B 0
+doowop E 0
+doowop A 0
+doowop D 0
+doowop G 0
+
+# Axis vi-IV-I-V
+axis C 0
+axis F 0
+axis Bb 0
+axis Eb 0
+axis Ab 0
+axis Db 0
+axis Gb 0
+axis B 0
+axis E 0
+axis A 0
+axis D 0
+axis G 0
+
+# Andalusian i-bVII-bVI-V
+andalus A 0
+andalus D 0
+andalus G 0
+andalus C 0
+andalus F 0
+andalus Bb 0
+andalus Eb 0
+andalus G# 0
+andalus C# 0
+andalus F# 0
+andalus B 0
+andalus E 0
+
+# I-IV-V
+145 C 0
+145 F 0
+145 Bb 0
+145 Eb 0
+145 Ab 0
+145 Db 0
+145 Gb 0
+145 B 0
+145 E 0
+145 A 0
+145 D 0
+145 G 0
+
+# Gospel 7-3-6
+736 C 0
+736 F 0
+736 Bb 0
+736 Eb 0
+736 Ab 0
+736 Db 0
+736 Gb 0
+736 B 0
+736 E 0
+736 A 0
+736 D 0
+736 G 0
+
+# Pachelbel canon
+canon C 0
+canon F 0
+canon Bb 0
+canon Eb 0
+canon Ab 0
+canon Db 0
+canon Gb 0
+canon B 0
+canon E 0
+canon A 0
+canon D 0
+canon G 0
+
+# 12-bar blues
+blues12 C 0
+blues12 F 0
+blues12 Bb 0
+blues12 Eb 0
+blues12 Ab 0
+blues12 Db 0
+blues12 Gb 0
+blues12 B 0
+blues12 E 0
+blues12 A 0
+blues12 D 0
+blues12 G 0
+
 # Fixed custom exercises: custom "name" "symbols to show" weight
 custom "example lick" "Dm9 G13 C6/9" 0
 `;
@@ -882,6 +1004,18 @@ const PLAYERS = [
               ['lady', KEYS_MAJ12, 60], ['36251', KEYS_MAJ12, 50]]],
 ];
 
+// Non-jazz styles.
+const STYLES = [
+  ['pop',       [['pop4', KEYS_MAJ12, 80], ['doowop', KEYS_MAJ12, 60], ['axis', KEYS_MAJ12, 60],
+                 ['145', KEYS_MAJ12, 40]]],
+  ['rock',      [['axis', KEYS_MAJ12, 70], ['andalus', KEYS_MIN12, 70], ['145', KEYS_MAJ12, 50],
+                 ['pop4', KEYS_MAJ12, 40]]],
+  ['blues',     [['blues12', KEYS_MAJ12, 100], ['145', KEYS_MAJ12, 30]]],
+  ['gospel',    [['736', KEYS_MAJ12, 80], ['4m1', KEYS_MAJ12, 60], ['rich251', KEYS_MAJ12, 50],
+                 ['min251', KEYS_MIN12, 40]]],
+  ['classical', [['canon', KEYS_MAJ12, 70], ['andalus', KEYS_MIN12, 50], ['51', KEYS_MAJ12, 60]]],
+];
+
 function addPresets(el, list) {
   list.forEach(([name, parts]) => {
     const b = document.createElement('button');
@@ -906,6 +1040,7 @@ function addPresets(el, list) {
 }
 addPresets($('presets'), PRESETS);
 addPresets($('presets'), PLAYERS);
+addPresets($('presets'), STYLES);
 
 /* ---------- self-test (open index.html#test) ---------- */
 function selfTest() {
@@ -943,6 +1078,14 @@ function selfTest() {
     ['coltrane','C',  'Cmaj7 E♭7 A♭maj7 B7 Emaj7 G7 Cmaj7'],
     ['sowhat',  'C',  'Dm7 Em7'],
     ['countdown','C', 'Dm7 E♭7 A♭maj7 B7 Emaj7 G7 Cmaj7'],
+    ['pop4',    'C',  'C G Am F'],
+    ['doowop',  'C',  'C Am F G'],
+    ['axis',    'C',  'Am F C G'],
+    ['andalus', 'A',  'Am G F E7'],
+    ['145',     'C',  'C F G7'],
+    ['736',     'C',  'Bm7♭5 E7♭9 Am7'],
+    ['canon',   'C',  'C G Am Em F C F G'],
+    ['blues12', 'C',  'C7 F7 C7 C7 F7 F7 C7 C7 G7 F7 C7 G7'],
   ];
   const lines = cases.map(([p, k, want]) => {
     const g = got(p, k);
