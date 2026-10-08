@@ -60,6 +60,9 @@
     padding: 12px 14px; font: 500 .9rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   }
   textarea:focus { outline: 2px solid #7fb3ff44; }
+  #patterns { min-height: 230px; }
+  .boxlabel { font-size: .78rem; color: #707a86; margin-bottom: -10px; }
+  .boxlabel code { background: #151a22; padding: 1px 5px; border-radius: 5px; }
   details { color: #9aa0a6; font-size: .85rem; line-height: 1.5; }
   summary { cursor: pointer; color: #b7c0ca; }
   details code, #status code { background: #151a22; padding: 1px 5px; border-radius: 5px; }
@@ -93,27 +96,29 @@
       <button id="resetBtn" type="button">reset to defaults</button>
     </div>
   </div>
+  <div class="boxlabel">exercises — <code>pattern key weight</code> · <code>chord Bb9 100</code> · <code>custom "name" "symbols" 100</code></div>
   <textarea id="config" spellcheck="false" aria-label="Exercise weights"></textarea>
+  <div class="boxlabel">pattern definitions — <code>name Label = Roman chords</code></div>
+  <textarea id="patterns" spellcheck="false" aria-label="Pattern definitions"></textarea>
 
   <details>
-    <summary>Patterns &amp; format</summary>
-    <p>One exercise per line: <code>pattern key weight</code>. Weight is 0–100:
-       <code>0</code> disables the line, higher weights come up more often
-       (a 100 line is drawn 10× as often as a 10 line). Keys use <code>#</code>/<code>b</code>
-       (C, F#, Bb…). Lines starting with <code>#</code> are comments.
-       <em>copy share link</em> packs this whole list into a URL — send it to someone
-       (e.g. your teacher sends you the week's list) and opening it loads the list.</p>
+    <summary>How to write exercises &amp; patterns</summary>
+    <p><strong>Exercises box</strong> — one per line, weight 0–100
+       (<code>0</code> = off, a 100 line is drawn 10× as often as a 10 line):</p>
     <table>
-      <tr><td><code>maj251</code></td><td>Major ii–V–I</td><td>Dm7 · G7 · Cmaj7</td></tr>
-      <tr><td><code>min251</code></td><td>Minor ii–V–i</td><td>Dm7♭5 · G7♭9 · Cm7</td></tr>
-      <tr><td><code>1625</code></td><td>Turnaround I–VI–ii–V</td><td>Cmaj7 · A7 · Dm7 · G7</td></tr>
-      <tr><td><code>3625</code></td><td>Turnaround iii–VI–ii–V</td><td>Em7 · A7 · Dm7 · G7</td></tr>
-      <tr><td><code>trisub251</code></td><td>Tritone sub ii–♭II–I</td><td>Dm7 · D♭7 · Cmaj7</td></tr>
-      <tr><td><code>backdoor</code></td><td>Backdoor iv–♭VII–I</td><td>Fm7 · B♭7 · Cmaj7</td></tr>
-      <tr><td><code>min1625</code></td><td>Minor turnaround i–VI–ii–V</td><td>Cm7 · A♭maj7 · Dm7♭5 · G7♭9</td></tr>
-      <tr><td><code>36251</code></td><td>iii–VI–ii–V–I</td><td>Em7 · A7 · Dm7 · G7 · Cmaj7</td></tr>
-      <tr><td><code>chord</code></td><td>Single chord (any symbol)</td><td><code>chord Bb9 100</code> → B♭9</td></tr>
+      <tr><td><code>maj251 Eb 100</code></td><td>pattern in a key (patterns defined in the box below)</td></tr>
+      <tr><td><code>chord Bb9 100</code></td><td>single chord, any symbol</td></tr>
+      <tr><td><code>custom "my lick" "Dm9 G13 C6/9" 100</code></td><td>fixed symbols shown verbatim; the name is the revealed answer</td></tr>
     </table>
+    <p><strong>Patterns box</strong> — define your own: <code>name Label = Roman chords</code>.
+       Degrees <code>I</code>…<code>VII</code> of the major scale with optional <code>b</code>/<code>#</code>
+       (<code>bII7</code>, <code>#Idim7</code>); whatever follows the degree is printed as-is
+       (<code>IIm7b5</code> → IIm7♭5). Example:
+       <code>myturn My turnaround = IIIm7 VI7b9 IIm7 bII7 Imaj7</code>,
+       then weight it in the exercises box: <code>myturn Bb 80</code>.</p>
+    <p>Keys use <code>#</code>/<code>b</code> (C, F#, Bb…). Lines starting with <code>#</code> are comments.
+       <em>copy share link</em> packs both boxes into a URL — opening it loads the lists
+       (e.g. your teacher sends you the week's list).</p>
   </details>
 </main>
 
@@ -151,24 +156,71 @@ function deg(root, steps, semis) {
   return { letter, acc };
 }
 
-const PATTERNS = {
-  maj251:    { name: 'Major ii–V–I', keyLabel: k => k,
-               chords: t => [chord(deg(t,1,2),'m7'), chord(deg(t,4,7),'7'), chord(t,'maj7')] },
-  min251:    { name: 'Minor ii–V–i', keyLabel: k => k + 'm',
-               chords: t => [chord(deg(t,1,2),'m7♭5'), chord(deg(t,4,7),'7♭9'), chord(t,'m7')] },
-  '1625':    { name: 'Turnaround I–VI–ii–V', keyLabel: k => k,
-               chords: t => [chord(t,'maj7'), chord(deg(t,5,9),'7'), chord(deg(t,1,2),'m7'), chord(deg(t,4,7),'7')] },
-  '3625':    { name: 'Turnaround iii–VI–ii–V', keyLabel: k => k,
-               chords: t => [chord(deg(t,2,4),'m7'), chord(deg(t,5,9),'7'), chord(deg(t,1,2),'m7'), chord(deg(t,4,7),'7')] },
-  trisub251: { name: 'Tritone sub ii–♭II–I', keyLabel: k => k,
-               chords: t => [chord(deg(t,1,2),'m7'), chord(deg(t,1,1),'7'), chord(t,'maj7')] },
-  backdoor:  { name: 'Backdoor iv–♭VII–I', keyLabel: k => k,
-               chords: t => [chord(deg(t,3,5),'m7'), chord(deg(t,6,10),'7'), chord(t,'maj7')] },
-  min1625:   { name: 'Minor turnaround i–VI–ii–V', keyLabel: k => k + 'm',
-               chords: t => [chord(t,'m7'), chord(deg(t,5,8),'maj7'), chord(deg(t,1,2),'m7♭5'), chord(deg(t,4,7),'7♭9')] },
-  '36251':   { name: 'iii–VI–ii–V–I', keyLabel: k => k,
-               chords: t => [chord(deg(t,2,4),'m7'), chord(deg(t,5,9),'7'), chord(deg(t,1,2),'m7'), chord(deg(t,4,7),'7'), chord(t,'maj7')] },
-};
+/* ---------- patterns (user-definable, Roman-numeral DSL) ---------- */
+// Major-scale degrees as [letter steps, semitones] above the key root.
+const ROMAN = { i:[0,0], ii:[1,2], iii:[2,4], iv:[3,5], v:[4,7], vi:[5,9], vii:[6,11] };
+
+function parseRomanChord(tok) {
+  const m = /^(b{1,2}|#{1,2})?(vii|iii|vi|iv|ii|i|v)(\S*)$/i.exec(tok);
+  if (!m) return null;
+  const shift = m[1] ? (m[1][0] === '#' ? m[1].length : -m[1].length) : 0;
+  const [steps, semis] = ROMAN[m[2].toLowerCase()];
+  return { steps, semis: semis + shift, suffix: prettySuffix(m[3]) };
+}
+
+// "name  Label words = IIm7 V7 Imaj7"  ->  pats[name] = {name: label, chords: fn}
+function parsePatterns(text) {
+  const pats = {}, errors = [];
+  text.split(/\r?\n/).forEach((raw, i) => {
+    const line = raw.trim();
+    if (!line || line.startsWith('#') || line.startsWith('//')) return;
+    const eq = line.indexOf('=');
+    if (eq < 0) { errors.push(`Pattern line ${i+1}: missing "="`); return; }
+    const left = line.slice(0, eq).trim().split(/\s+/);
+    const name = (left[0] || '').toLowerCase();
+    if (!name) { errors.push(`Pattern line ${i+1}: missing name`); return; }
+    if (name === 'chord') { errors.push(`Pattern line ${i+1}: "chord" is built in`); return; }
+    const label = left.slice(1).join(' ') || left[0];
+    const specs = line.slice(eq + 1).trim().split(/\s+/).filter(Boolean);
+    if (!specs.length) { errors.push(`Pattern line ${i+1}: no chords after "="`); return; }
+    const parsed = specs.map(parseRomanChord);
+    const bad = parsed.indexOf(null);
+    if (bad >= 0) { errors.push(`Pattern line ${i+1}: bad chord "${specs[bad]}"`); return; }
+    pats[name] = { name: label, chords: t => parsed.map(p => chord(deg(t, p.steps, p.semis), p.suffix)) };
+  });
+  return { pats, errors };
+}
+
+let PATTERNS = {};
+
+const DEFAULT_PATTERNS = `# One pattern per line:  name  Label shown as the answer = Roman-degree chords
+# Degrees I..VII of the major scale, optional b/# in front (bII7, #Idim7, bVImaj7).
+# Whatever follows the degree is printed as-is: IIm7, V7b9, Imaj9, V7alt...
+# "chord" is built in: in the exercise list write e.g. "chord Bb9 100".
+
+maj251     Major ii-V-I                 = IIm7 V7 Imaj7
+min251     Minor ii-V-i                 = IIm7b5 V7b9 Im7
+maj25      ii-V only                    = IIm7 V7
+min25      Minor ii-V only              = IIm7b5 V7b9
+51         V-I cadence                  = V7 Imaj7
+min51      Minor V-i cadence            = V7b9 Im7
+1625       Turnaround I-VI-ii-V         = Imaj7 VI7 IIm7 V7
+1m625      Diatonic I-vi-ii-V           = Imaj7 VIm7 IIm7 V7
+3625       Turnaround iii-VI-ii-V       = IIIm7 VI7 IIm7 V7
+36251      Full 3-6-2-5-1               = IIIm7 VI7 IIm7 V7 Imaj7
+min1625    Minor turnaround i-VI-ii-V   = Im7 bVImaj7 IIm7b5 V7b9
+trisub251  Tritone sub ii-bII-I         = IIm7 bII7 Imaj7
+backdoor   Backdoor iv-bVII-I           = IVm7 bVII7 Imaj7
+sus251     ii-V7sus-I                   = IIm7 V7sus4 Imaj7
+alt251     ii-V7alt-I                   = IIm7 V7alt Imaj7
+rich251    ii-V-I with extensions       = IIm9 V13 Imaj9
+min251maj  Minor ii-V-i to minMaj7      = IIm7b5 V7alt ImMaj7
+dimpass    Dim passing I-#Io-ii-V       = Imaj7 #Idim7 IIm7 V7
+chrom25    Chromatic descending ii-Vs   = IIIm7 bIII7 IIm7 bII7 Imaj7
+4m1        Plagal IV-iv-I               = IVmaj7 IVm7 Imaj7
+lady       Ladybird turnaround          = Imaj7 bIIImaj7 bVImaj7 bIImaj7
+coltrane   Coltrane cycle               = Imaj7 bIII7 bVImaj7 VII7 IIImaj7 V7 Imaj7
+`;
 
 /* ---------- config ---------- */
 const DEFAULT_CONFIG = `# One line per exercise:  pattern  key  weight
@@ -297,15 +349,232 @@ chord Amaj9 0
 chord Dm9 0
 chord G7alt 0
 chord Bm7b5 0
+
+# ii-V only
+maj25 C 0
+maj25 F 0
+maj25 Bb 0
+maj25 Eb 0
+maj25 Ab 0
+maj25 Db 0
+maj25 Gb 0
+maj25 B 0
+maj25 E 0
+maj25 A 0
+maj25 D 0
+maj25 G 0
+
+# Minor ii-V only
+min25 A 0
+min25 D 0
+min25 G 0
+min25 C 0
+min25 F 0
+min25 Bb 0
+min25 Eb 0
+min25 G# 0
+min25 C# 0
+min25 F# 0
+min25 B 0
+min25 E 0
+
+# V-I cadence
+51 C 0
+51 F 0
+51 Bb 0
+51 Eb 0
+51 Ab 0
+51 Db 0
+51 Gb 0
+51 B 0
+51 E 0
+51 A 0
+51 D 0
+51 G 0
+
+# Minor V-i cadence
+min51 A 0
+min51 D 0
+min51 G 0
+min51 C 0
+min51 F 0
+min51 Bb 0
+min51 Eb 0
+min51 G# 0
+min51 C# 0
+min51 F# 0
+min51 B 0
+min51 E 0
+
+# Diatonic I-vi-ii-V
+1m625 C 0
+1m625 F 0
+1m625 Bb 0
+1m625 Eb 0
+1m625 Ab 0
+1m625 Db 0
+1m625 Gb 0
+1m625 B 0
+1m625 E 0
+1m625 A 0
+1m625 D 0
+1m625 G 0
+
+# ii-V7sus-I
+sus251 C 0
+sus251 F 0
+sus251 Bb 0
+sus251 Eb 0
+sus251 Ab 0
+sus251 Db 0
+sus251 Gb 0
+sus251 B 0
+sus251 E 0
+sus251 A 0
+sus251 D 0
+sus251 G 0
+
+# ii-V7alt-I
+alt251 C 0
+alt251 F 0
+alt251 Bb 0
+alt251 Eb 0
+alt251 Ab 0
+alt251 Db 0
+alt251 Gb 0
+alt251 B 0
+alt251 E 0
+alt251 A 0
+alt251 D 0
+alt251 G 0
+
+# ii-V-I with extensions
+rich251 C 0
+rich251 F 0
+rich251 Bb 0
+rich251 Eb 0
+rich251 Ab 0
+rich251 Db 0
+rich251 Gb 0
+rich251 B 0
+rich251 E 0
+rich251 A 0
+rich251 D 0
+rich251 G 0
+
+# Minor ii-V-i to minMaj7
+min251maj A 0
+min251maj D 0
+min251maj G 0
+min251maj C 0
+min251maj F 0
+min251maj Bb 0
+min251maj Eb 0
+min251maj G# 0
+min251maj C# 0
+min251maj F# 0
+min251maj B 0
+min251maj E 0
+
+# Dim passing I-#Io-ii-V
+dimpass C 0
+dimpass F 0
+dimpass Bb 0
+dimpass Eb 0
+dimpass Ab 0
+dimpass Db 0
+dimpass Gb 0
+dimpass B 0
+dimpass E 0
+dimpass A 0
+dimpass D 0
+dimpass G 0
+
+# Chromatic descending ii-Vs
+chrom25 C 0
+chrom25 F 0
+chrom25 Bb 0
+chrom25 Eb 0
+chrom25 Ab 0
+chrom25 Db 0
+chrom25 Gb 0
+chrom25 B 0
+chrom25 E 0
+chrom25 A 0
+chrom25 D 0
+chrom25 G 0
+
+# Plagal IV-iv-I
+4m1 C 0
+4m1 F 0
+4m1 Bb 0
+4m1 Eb 0
+4m1 Ab 0
+4m1 Db 0
+4m1 Gb 0
+4m1 B 0
+4m1 E 0
+4m1 A 0
+4m1 D 0
+4m1 G 0
+
+# Ladybird turnaround
+lady C 0
+lady F 0
+lady Bb 0
+lady Eb 0
+lady Ab 0
+lady Db 0
+lady Gb 0
+lady B 0
+lady E 0
+lady A 0
+lady D 0
+lady G 0
+
+# Coltrane cycle
+coltrane C 0
+coltrane F 0
+coltrane Bb 0
+coltrane Eb 0
+coltrane Ab 0
+coltrane Db 0
+coltrane Gb 0
+coltrane B 0
+coltrane E 0
+coltrane A 0
+coltrane D 0
+coltrane G 0
+
+# Fixed custom exercises: custom "name" "symbols to show" weight
+custom "example lick" "Dm9 G13 C6/9" 0
 `;
 
 const esc = s => s.replace(/[&<>"]/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[ch]));
+
+// Literal token for custom exercises: chord-like tokens get nice accidentals, anything else passes through.
+const prettyToken = tok => {
+  const m = /^([A-Ga-g](?:#{1,2}|b{1,2})?)(\S*)$/.exec(tok);
+  const root = m && parseKeyName(m[1]);
+  return root ? disp(root) + prettySuffix(m[2]) : prettySuffix(tok);
+};
 
 function parseConfig(text) {
   const items = [], errors = [];
   text.split(/\r?\n/).forEach((raw, i) => {
     const line = raw.trim();
     if (!line || line.startsWith('#') || line.startsWith('//')) return;
+    if (/^custom\b/i.test(line)) {  // custom "name" "symbols to show" weight
+      const m = /^custom\s+"([^"]*)"\s+"([^"]*)"\s+(\S+)$/i.exec(line);
+      const weight = m ? Number(m[3]) : NaN;
+      if (!m || !Number.isFinite(weight) || weight < 0 || weight > 100) {
+        errors.push(`Line ${i+1}: expected: custom "name" "symbols" weight 0-100`); return;
+      }
+      const tokens = m[2].trim().split(/\s+/).filter(Boolean).map(prettyToken);
+      if (!tokens.length) { errors.push(`Line ${i+1}: custom has no symbols`); return; }
+      if (weight > 0) items.push({ pattern: 'custom', name: m[1] || 'custom', tokens, weight, id: 'custom|' + m[1] + '|' + m[2] });
+      return;
+    }
     const parts = line.split(/\s+/);
     if (parts.length !== 3) { errors.push(`Line ${i+1}: expected "pattern key weight"`); return; }
     const pname = parts[0].toLowerCase();
@@ -331,12 +600,17 @@ function parseConfig(text) {
 
 /* ---------- app state & UI ---------- */
 const $ = id => document.getElementById(id);
-const ta = $('config'), prevEl = $('prevEx'), chordsEl = $('chords'), statusEl = $('status');
+const ta = $('config'), taPat = $('patterns'), prevEl = $('prevEx'), chordsEl = $('chords'), statusEl = $('status');
 
 let items = [], lastId = null, currentDesc = null;
 
-const STORE_KEY = 'jazz251-config';
-const save = () => { try { localStorage.setItem(STORE_KEY, ta.value); } catch (_) {} };
+const STORE_KEY = 'jazz251-config', STORE_PAT = 'jazz251-patterns';
+const save = () => {
+  try {
+    localStorage.setItem(STORE_KEY, ta.value);
+    localStorage.setItem(STORE_PAT, taPat.value);
+  } catch (_) {}
+};
 
 function pick() {
   const total = items.reduce((s, it) => s + it.weight, 0);
@@ -362,19 +636,22 @@ function next() {
   }
   const ex = pick();
   let list, desc;
-  if (ex.pattern === 'chord') {
+  if (ex.pattern === 'custom') {
+    list = ex.tokens.map(text => ({ text }));
+    desc = ex.name;
+  } else if (ex.pattern === 'chord') {
     list = [chord(ex.key, ex.suffix)];
     desc = 'Single chord · ' + disp(ex.key) + ex.suffix;
   } else {
     const p = PATTERNS[ex.pattern];
     list = p.chords(ex.key);
-    desc = p.name + ' · ' + p.keyLabel(disp(ex.key));
+    desc = p.name + ' · ' + disp(ex.key);
   }
   // Reveal the answer for the exercise you just played; keep the new one hidden.
   prevEl.textContent = currentDesc ? 'previous: ' + currentDesc : '';
   currentDesc = desc;
   chordsEl.innerHTML = list
-    .map(c => `<span class="chord">${disp(c.root)}${c.suffix}</span>`)
+    .map(c => `<span class="chord">${esc(c.text ?? (disp(c.root) + c.suffix))}</span>`)
     .join('');
   fitChords();
 }
@@ -390,19 +667,24 @@ function fitChords() {
 }
 
 function applyConfig() {
+  const pr = parsePatterns(taPat.value);
+  PATTERNS = pr.pats;
   const res = parseConfig(ta.value);
   items = res.items;
   const total = items.reduce((s, it) => s + it.weight, 0);
+  const errors = [...pr.errors, ...res.errors];
   statusEl.innerHTML = `${items.length} exercise${items.length === 1 ? '' : 's'} on · total weight ${total}`
-    + res.errors.slice(0, 4).map(e => `<span class="err">${esc(e)}</span>`).join('');
+    + errors.slice(0, 4).map(e => `<span class="err">${esc(e)}</span>`).join('');
   if (lastId === null) next();  // auto-start once there is something to show
 }
 
 $('nextBtn').addEventListener('click', next);
 $('card').addEventListener('click', next);
-$('resetBtn').addEventListener('click', () => { ta.value = DEFAULT_CONFIG; save(); applyConfig(); });
+$('resetBtn').addEventListener('click', () => { ta.value = DEFAULT_CONFIG; taPat.value = DEFAULT_PATTERNS; save(); applyConfig(); });
 $('shareBtn').addEventListener('click', async () => {
-  const url = location.href.split('#')[0] + '#cfg=' + encodeURIComponent(ta.value);
+  const url = location.href.split('#')[0]
+    + '#cfg=' + encodeURIComponent(ta.value)
+    + '&pat=' + encodeURIComponent(taPat.value);
   let ok = false;
   try { await navigator.clipboard.writeText(url); ok = true; } catch (_) {}
   if (!ok) {  // older browsers / non-secure contexts
@@ -421,6 +703,7 @@ $('shareBtn').addEventListener('click', async () => {
   setTimeout(() => { b.textContent = 'copy share link'; }, 1500);
 });
 ta.addEventListener('input', () => { save(); applyConfig(); });
+taPat.addEventListener('input', () => { save(); applyConfig(); });
 window.addEventListener('resize', fitChords);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitChords);
 document.addEventListener('keydown', e => {
@@ -453,17 +736,28 @@ function selfTest() {
     ['min1625', 'C',  'Cm7 A♭maj7 Dm7♭5 G7♭9'],
     ['min1625', 'F#', 'F♯m7 Dmaj7 G♯m7♭5 C♯7♭9'],
     ['36251',   'C',  'Em7 A7 Dm7 G7 Cmaj7'],
+    ['51',      'Eb', 'B♭7 E♭maj7'],
+    ['sus251',  'C',  'Dm7 G7sus4 Cmaj7'],
+    ['rich251', 'C',  'Dm9 G13 Cmaj9'],
+    ['dimpass', 'C',  'Cmaj7 C♯dim7 Dm7 G7'],
+    ['chrom25', 'C',  'Em7 E♭7 Dm7 D♭7 Cmaj7'],
+    ['4m1',     'C',  'Fmaj7 Fm7 Cmaj7'],
+    ['lady',    'C',  'Cmaj7 E♭maj7 A♭maj7 D♭maj7'],
+    ['coltrane','C',  'Cmaj7 E♭7 A♭maj7 B7 Emaj7 G7 Cmaj7'],
   ];
   const lines = cases.map(([p, k, want]) => {
     const g = got(p, k);
     return (g === want ? 'PASS  ' : 'FAIL  ') + `${p} ${k} → ${g}` + (g === want ? '' : `   (want: ${want})`);
   });
-  // Single-chord lines go through parseConfig, so check that path too.
+  // Single-chord and custom lines go through parseConfig, so check those paths too.
   const cp = s => { const it = parseConfig(s).items[0]; return it ? disp(it.key) + it.suffix : 'parse error'; };
   [['chord Bb9 50', 'B♭9'], ['chord F#m7b5 50', 'F♯m7♭5'], ['chord G7alt 50', 'G7alt']].forEach(([src, want]) => {
     const g = cp(src);
     lines.push((g === want ? 'PASS  ' : 'FAIL  ') + `${src} → ${g}` + (g === want ? '' : `   (want: ${want})`));
   });
+  const cu = parseConfig('custom "x" "Bbm7 Eb7 Abmaj7" 50').items[0];
+  const cug = cu ? cu.tokens.join(' ') : 'parse error';
+  lines.push((cug === 'B♭m7 E♭7 A♭maj7' ? 'PASS  ' : 'FAIL  ') + `custom symbols → ${cug}`);
   const allPass = lines.every(l => l.startsWith('PASS'));
   chordsEl.style.fontSize = '';
   prevEl.textContent = allPass ? 'Self-test: all passed ✓' : 'Self-test: FAILURES';
@@ -472,13 +766,17 @@ function selfTest() {
 }
 
 /* ---------- init ---------- */
-let stored = null;
-try { stored = localStorage.getItem(STORE_KEY); } catch (_) {}
+let stored = null, storedPat = null;
+try { stored = localStorage.getItem(STORE_KEY); storedPat = localStorage.getItem(STORE_PAT); } catch (_) {}
 ta.value = stored ?? DEFAULT_CONFIG;
-// A shared link carries the whole exercise list in the hash: adopt and persist it.
+taPat.value = storedPat ?? DEFAULT_PATTERNS;
+// A shared link carries both boxes in the hash: adopt and persist them.
 if (location.hash.startsWith('#cfg=')) {
   try {
-    ta.value = decodeURIComponent(location.hash.slice(5));
+    const h = location.hash.slice(5);
+    const at = h.indexOf('&pat=');
+    ta.value = decodeURIComponent(at >= 0 ? h.slice(0, at) : h);
+    if (at >= 0) taPat.value = decodeURIComponent(h.slice(at + 5));
     save();
     history.replaceState(null, '', location.pathname + location.search);
   } catch (_) {}
