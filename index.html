@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#10141a">
+<title>Jazz 2–5–1 Trainer</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎹%3C/text%3E%3C/svg%3E">
+<style>
+  @font-face {
+    font-family: 'MuseJazz Text';
+    src: url('MuseJazzText.otf') format('opentype');
+    font-display: swap;
+  }
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; padding: 28px 16px 48px;
+    display: flex; flex-direction: column; align-items: center;
+    background: #10141a; color: #e8eaed;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { width: min(720px, 100%); display: flex; flex-direction: column; gap: 16px; }
+  h1 { margin: 0; text-align: center; font-size: .85rem; font-weight: 600;
+       letter-spacing: .16em; text-transform: uppercase; color: #9aa0a6; }
+  #card {
+    background: #1a212b; border: 1px solid #2b3545; border-radius: 20px;
+    padding: 36px 20px; min-height: 240px; cursor: pointer;
+    user-select: none; -webkit-user-select: none; touch-action: manipulation;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 24px; text-align: center;
+  }
+  #prevEx { color: #8d97a3; font-size: clamp(.9rem, 2.4vw, 1.05rem); letter-spacing: .03em; min-height: 1.3em; }
+  #chords {
+    display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline;
+    column-gap: clamp(18px, 5vw, 44px); row-gap: 12px;
+    font-family: 'MuseJazz Text', Georgia, serif; font-weight: 400;
+    font-size: clamp(2.3rem, 9vw, 4.3rem); line-height: 1.1;
+  }
+  .chord { white-space: nowrap; }
+  .empty { font-size: 1.05rem; font-weight: 500; color: #9aa0a6; }
+  .testres { font-size: .95rem; font-weight: 500; line-height: 1.7; text-align: left; color: #cfd6de; }
+  #nextBtn {
+    width: 100%; padding: 20px; border: 0; border-radius: 16px; cursor: pointer;
+    background: #7fb3ff; color: #0c1526; font-size: 1.25rem; font-weight: 700;
+    letter-spacing: .03em; touch-action: manipulation;
+  }
+  #nextBtn:active { transform: scale(.985); }
+  .hint { text-align: center; color: #707a86; font-size: .8rem; margin-top: -6px; }
+  .rowline { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  #status { font-size: .85rem; color: #9aa0a6; }
+  #status .err { color: #ff8a80; display: block; }
+  #resetBtn { background: none; border: none; color: #7fb3ff; cursor: pointer; font-size: .8rem; padding: 0; }
+  textarea {
+    width: 100%; min-height: 320px; resize: vertical;
+    background: #151a22; color: #cfd6de; border: 1px solid #2b3545; border-radius: 12px;
+    padding: 12px 14px; font: 500 .9rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  textarea:focus { outline: 2px solid #7fb3ff44; }
+  details { color: #9aa0a6; font-size: .85rem; line-height: 1.5; }
+  summary { cursor: pointer; color: #b7c0ca; }
+  details code, #status code { background: #151a22; padding: 1px 5px; border-radius: 5px; }
+  details table { border-collapse: collapse; margin-top: 6px; }
+  details td { padding: 3px 14px 3px 0; }
+  /* Phone: exercise card + button fill the first screen; rest scrolls below. */
+  @media (max-width: 480px) {
+    body { padding: 12px 10px 40px; }
+    main { gap: 12px; }
+    #card { min-height: 52vh; padding: 24px 12px; border-radius: 16px; }
+    #chords { font-size: clamp(2.4rem, 13vw, 3.4rem); }
+    #nextBtn { padding: 22px; font-size: 1.35rem; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Jazz 2·5·1 Trainer</h1>
+
+  <section id="card" title="Tap for next exercise">
+    <div id="chords" aria-live="polite"></div>
+    <div id="prevEx"></div>
+  </section>
+
+  <button id="nextBtn" type="button">Next exercise</button>
+  <div class="hint">tap the card or press Space for the next one</div>
+
+  <div class="rowline">
+    <div id="status"></div>
+    <button id="resetBtn" type="button">reset to defaults</button>
+  </div>
+  <textarea id="config" spellcheck="false" aria-label="Exercise weights"></textarea>
+
+  <details>
+    <summary>Patterns &amp; format</summary>
+    <p>One exercise per line: <code>pattern key weight</code>. Weight is 0–100:
+       <code>0</code> disables the line, higher weights come up more often
+       (a 100 line is drawn 10× as often as a 10 line). Keys use <code>#</code>/<code>b</code>
+       (C, F#, Bb…). Lines starting with <code>#</code> are comments.</p>
+    <table>
+      <tr><td><code>maj251</code></td><td>Major ii–V–I</td><td>Dm7 · G7 · Cmaj7</td></tr>
+      <tr><td><code>min251</code></td><td>Minor ii–V–i</td><td>Dm7♭5 · G7♭9 · Cm7</td></tr>
+      <tr><td><code>1625</code></td><td>Turnaround I–VI–ii–V</td><td>Cmaj7 · A7 · Dm7 · G7</td></tr>
+      <tr><td><code>3625</code></td><td>Turnaround iii–VI–ii–V</td><td>Em7 · A7 · Dm7 · G7</td></tr>
+      <tr><td><code>trisub251</code></td><td>Tritone sub ii–♭II–I</td><td>Dm7 · D♭7 · Cmaj7</td></tr>
+      <tr><td><code>backdoor</code></td><td>Backdoor iv–♭VII–I</td><td>Fm7 · B♭7 · Cmaj7</td></tr>
+    </table>
+  </details>
+</main>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- music theory ---------- */
+const LETTERS = ['C','D','E','F','G','A','B'];
+const LETTER_PC = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 };
+// Simplest enharmonic spelling per pitch class, used when letter arithmetic
+// would produce a double accidental (e.g. bII of Gb -> G instead of Abb).
+const SIMPLE = [['C',0],['D',-1],['D',0],['E',-1],['E',0],['F',0],['G',-1],['G',0],['A',-1],['A',0],['B',-1],['B',0]];
+
+const pcOf = n => ((LETTER_PC[n.letter] + n.acc) % 12 + 12) % 12;
+const disp = n => n.letter + (n.acc > 0 ? '♯'.repeat(n.acc) : '♭'.repeat(-n.acc));
+const chord = (root, suffix) => ({ root, suffix });
+
+function parseKeyName(s) {
+  const m = /^([A-Ga-g])(#{1,2}|b{1,2})?$/.exec(s);
+  if (!m) return null;
+  const acc = m[2] ? (m[2][0] === '#' ? m[2].length : -m[2].length) : 0;
+  return { letter: m[1].toUpperCase(), acc };
+}
+
+// Scale degree above a root: `steps` letter names up, `semis` semitones up.
+function deg(root, steps, semis) {
+  const letter = LETTERS[(LETTERS.indexOf(root.letter) + steps) % 7];
+  const target = (pcOf(root) + semis) % 12;
+  let acc = target - LETTER_PC[letter];
+  if (acc > 6) acc -= 12; else if (acc < -6) acc += 12;
+  if (Math.abs(acc) > 1) { const [L, a] = SIMPLE[target]; return { letter: L, acc: a }; }
+  return { letter, acc };
+}
+
+const PATTERNS = {
+  maj251:    { name: 'Major ii–V–I', keyLabel: k => k,
+               chords: t => [chord(deg(t,1,2),'m7'), chord(deg(t,4,7),'7'), chord(t,'maj7')] },
+  min251:    { name: 'Minor ii–V–i', keyLabel: k => k + 'm',
+               chords: t => [chord(deg(t,1,2),'m7♭5'), chord(deg(t,4,7),'7♭9'), chord(t,'m7')] },
+  '1625':    { name: 'Turnaround I–VI–ii–V', keyLabel: k => k,
+               chords: t => [chord(t,'maj7'), chord(deg(t,5,9),'7'), chord(deg(t,1,2),'m7'), chord(deg(t,4,7),'7')] },
+  '3625':    { name: 'Turnaround iii–VI–ii–V', keyLabel: k => k,
+               chords: t => [chord(deg(t,2,4),'m7'), chord(deg(t,5,9),'7'), chord(deg(t,1,2),'m7'), chord(deg(t,4,7),'7')] },
+  trisub251: { name: 'Tritone sub ii–♭II–I', keyLabel: k => k,
+               chords: t => [chord(deg(t,1,2),'m7'), chord(deg(t,1,1),'7'), chord(t,'maj7')] },
+  backdoor:  { name: 'Backdoor iv–♭VII–I', keyLabel: k => k,
+               chords: t => [chord(deg(t,3,5),'m7'), chord(deg(t,6,10),'7'), chord(t,'maj7')] },
+};
+
+/* ---------- config ---------- */
+const DEFAULT_CONFIG = `# One line per exercise:  pattern  key  weight
+# Weight 0-100: 0 = off, higher = comes up more often.
+# Patterns: maj251, min251, 1625, 3625, trisub251, backdoor
+
+# Major ii-V-I (you know most of these - kept light)
+maj251 C 20
+maj251 F 20
+maj251 Bb 20
+maj251 Eb 20
+maj251 Ab 20
+maj251 Db 20
+maj251 Gb 20
+maj251 B 20
+maj251 E 20
+maj251 A 20
+maj251 D 20
+maj251 G 20
+
+# Minor ii-V-i (main focus)
+min251 A 100
+min251 D 100
+min251 G 100
+min251 C 100
+min251 F 100
+min251 Bb 100
+min251 Eb 100
+min251 G# 100
+min251 C# 100
+min251 F# 100
+min251 B 100
+min251 E 100
+
+# Turnaround I-VI-ii-V
+1625 C 40
+1625 F 40
+1625 Bb 40
+1625 Eb 40
+1625 Ab 40
+1625 Db 40
+1625 Gb 40
+1625 B 40
+1625 E 40
+1625 A 40
+1625 D 40
+1625 G 40
+
+# Turnaround iii-VI-ii-V
+3625 C 30
+3625 F 30
+3625 Bb 30
+3625 Eb 30
+3625 Ab 30
+3625 Db 30
+3625 Gb 30
+3625 B 30
+3625 E 30
+3625 A 30
+3625 D 30
+3625 G 30
+
+# Tritone sub ii-bII-I
+trisub251 C 30
+trisub251 F 30
+trisub251 Bb 30
+trisub251 Eb 30
+trisub251 Ab 30
+trisub251 Db 30
+trisub251 Gb 30
+trisub251 B 30
+trisub251 E 30
+trisub251 A 30
+trisub251 D 30
+trisub251 G 30
+
+# Backdoor iv-bVII-I
+backdoor C 30
+backdoor F 30
+backdoor Bb 30
+backdoor Eb 30
+backdoor Ab 30
+backdoor Db 30
+backdoor Gb 30
+backdoor B 30
+backdoor E 30
+backdoor A 30
+backdoor D 30
+backdoor G 30
+`;
+
+const esc = s => s.replace(/[&<>"]/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[ch]));
+
+function parseConfig(text) {
+  const items = [], errors = [];
+  text.split(/\r?\n/).forEach((raw, i) => {
+    const line = raw.trim();
+    if (!line || line.startsWith('#') || line.startsWith('//')) return;
+    const parts = line.split(/\s+/);
+    if (parts.length !== 3) { errors.push(`Line ${i+1}: expected "pattern key weight"`); return; }
+    const pname = parts[0].toLowerCase();
+    if (!PATTERNS[pname]) { errors.push(`Line ${i+1}: unknown pattern "${parts[0]}"`); return; }
+    const key = parseKeyName(parts[1]);
+    if (!key) { errors.push(`Line ${i+1}: bad key "${parts[1]}"`); return; }
+    const weight = Number(parts[2]);
+    if (!Number.isFinite(weight) || weight < 0 || weight > 100) {
+      errors.push(`Line ${i+1}: weight must be 0-100, got "${parts[2]}"`); return;
+    }
+    if (weight > 0) items.push({ pattern: pname, key, weight, id: pname + '|' + disp(key) });
+  });
+  return { items, errors };
+}
+
+/* ---------- app state & UI ---------- */
+const $ = id => document.getElementById(id);
+const ta = $('config'), prevEl = $('prevEx'), chordsEl = $('chords'), statusEl = $('status');
+
+let items = [], lastId = null, currentDesc = null;
+
+const STORE_KEY = 'jazz251-config';
+const save = () => { try { localStorage.setItem(STORE_KEY, ta.value); } catch (_) {} };
+
+function pick() {
+  const total = items.reduce((s, it) => s + it.weight, 0);
+  let chosen = items[items.length - 1];
+  for (let tries = 0; tries < 15; tries++) {
+    let r = Math.random() * total;
+    chosen = items[items.length - 1];
+    for (const it of items) { if ((r -= it.weight) < 0) { chosen = it; break; } }
+    if (items.length === 1 || chosen.id !== lastId) break;  // avoid immediate repeats
+  }
+  lastId = chosen.id;
+  return chosen;
+}
+
+function next() {
+  if (!items.length) {
+    prevEl.textContent = '';
+    chordsEl.innerHTML = '<span class="empty">No exercises enabled — set a weight &gt; 0 below</span>';
+    lastId = null;
+    currentDesc = null;
+    return;
+  }
+  const ex = pick();
+  const p = PATTERNS[ex.pattern];
+  // Reveal the answer for the exercise you just played; keep the new one hidden.
+  prevEl.textContent = currentDesc ? 'previous: ' + currentDesc : '';
+  currentDesc = p.name + ' · ' + p.keyLabel(disp(ex.key));
+  chordsEl.innerHTML = p.chords(ex.key)
+    .map(c => `<span class="chord">${disp(c.root)}${c.suffix}</span>`)
+    .join('');
+}
+
+function applyConfig() {
+  const res = parseConfig(ta.value);
+  items = res.items;
+  const total = items.reduce((s, it) => s + it.weight, 0);
+  statusEl.innerHTML = `${items.length} exercise${items.length === 1 ? '' : 's'} on · total weight ${total}`
+    + res.errors.slice(0, 4).map(e => `<span class="err">${esc(e)}</span>`).join('');
+  if (lastId === null) next();  // auto-start once there is something to show
+}
+
+$('nextBtn').addEventListener('click', next);
+$('card').addEventListener('click', next);
+$('resetBtn').addEventListener('click', () => { ta.value = DEFAULT_CONFIG; save(); applyConfig(); });
+ta.addEventListener('input', () => { save(); applyConfig(); });
+document.addEventListener('keydown', e => {
+  if (e.code !== 'Space' && e.code !== 'Enter') return;
+  if (e.target.closest && e.target.closest('button, textarea, summary, details, a')) return;
+  e.preventDefault();
+  next();
+});
+
+/* ---------- self-test (open index.html#test) ---------- */
+function selfTest() {
+  const got = (p, k) => PATTERNS[p].chords(parseKeyName(k)).map(c => disp(c.root) + c.suffix).join(' ');
+  const cases = [
+    ['maj251', 'C',  'Dm7 G7 Cmaj7'],
+    ['maj251', 'Eb', 'Fm7 B♭7 E♭maj7'],
+    ['maj251', 'Db', 'E♭m7 A♭7 D♭maj7'],
+    ['maj251', 'F#', 'G♯m7 C♯7 F♯maj7'],
+    ['maj251', 'B',  'C♯m7 F♯7 Bmaj7'],
+    ['min251', 'C',  'Dm7♭5 G7♭9 Cm7'],
+    ['min251', 'F#', 'G♯m7♭5 C♯7♭9 F♯m7'],
+    ['min251', 'Eb', 'Fm7♭5 B♭7♭9 E♭m7'],
+    ['1625',   'C',  'Cmaj7 A7 Dm7 G7'],
+    ['1625',   'Eb', 'E♭maj7 C7 Fm7 B♭7'],
+    ['3625',   'C',  'Em7 A7 Dm7 G7'],
+    ['3625',   'Eb', 'Gm7 C7 Fm7 B♭7'],
+    ['trisub251', 'C',  'Dm7 D♭7 Cmaj7'],
+    ['trisub251', 'Gb', 'A♭m7 G7 G♭maj7'],
+    ['backdoor', 'C',  'Fm7 B♭7 Cmaj7'],
+    ['backdoor', 'Ab', 'D♭m7 G♭7 A♭maj7'],
+  ];
+  const lines = cases.map(([p, k, want]) => {
+    const g = got(p, k);
+    return (g === want ? 'PASS  ' : 'FAIL  ') + `${p} ${k} → ${g}` + (g === want ? '' : `   (want: ${want})`);
+  });
+  const allPass = lines.every(l => l.startsWith('PASS'));
+  prevEl.textContent = allPass ? 'Self-test: all passed ✓' : 'Self-test: FAILURES';
+  chordsEl.innerHTML = `<div class="testres">${lines.map(esc).join('<br>')}</div>`;
+  console.log(lines.join('\n'));
+}
+
+/* ---------- init ---------- */
+let stored = null;
+try { stored = localStorage.getItem(STORE_KEY); } catch (_) {}
+ta.value = stored ?? DEFAULT_CONFIG;
+applyConfig();
+if (location.hash === '#test') selfTest();
+})();
+</script>
+</body>
+</html>
