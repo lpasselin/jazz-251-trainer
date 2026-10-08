@@ -42,18 +42,41 @@
   .empty { white-space: normal; }
   .empty { font-size: 1.05rem; font-weight: 500; color: #9aa0a6; }
   .testres { font-size: .95rem; font-weight: 500; line-height: 1.7; text-align: left; color: #cfd6de; }
+  .navrow { display: flex; gap: 10px; width: 100%; }
   #nextBtn {
-    width: 100%; padding: 20px; border: 0; border-radius: 16px; cursor: pointer;
+    flex: 1; padding: 20px; border: 0; border-radius: 16px; cursor: pointer;
     background: #7fb3ff; color: #0c1526; font-size: 1.25rem; font-weight: 700;
     letter-spacing: .03em; touch-action: manipulation;
   }
   #nextBtn:active { transform: scale(.985); }
+  #backBtn, #fwdBtn {
+    width: 60px; border: 0; border-radius: 16px; cursor: pointer;
+    background: #222b38; color: #7fb3ff; font-size: 1.15rem; touch-action: manipulation;
+  }
+  #backBtn:disabled { opacity: .35; cursor: default; }
+  #timerbar { width: min(420px, 85%); height: 3px; border-radius: 2px; background: #2b3545; overflow: hidden; display: none; }
+  #timerbar.on { display: block; }
+  #timerfill { height: 100%; width: 0; background: #7fb3ff; }
+  #timerSecs {
+    width: 3.4em; background: #151a22; color: #cfd6de; border: 1px solid #2b3545;
+    border-radius: 6px; padding: 2px 4px; font-size: .78rem; text-align: center;
+  }
+  .presets { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: .8rem; color: #707a86; }
+  .presets button {
+    background: #1a212b; border: 1px solid #2b3545; color: #9fc1f7;
+    border-radius: 999px; padding: 4px 12px; cursor: pointer; font-size: .8rem;
+  }
+  .presets button:hover { border-color: #7fb3ff; }
   .hint { text-align: center; color: #707a86; font-size: .8rem; margin-top: -6px; }
   .rowline { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
   #status { font-size: .85rem; color: #9aa0a6; }
   #status .err { color: #ff8a80; display: block; }
-  #resetBtn, #shareBtn { background: none; border: none; color: #7fb3ff; cursor: pointer; font-size: .8rem; padding: 0; }
-  #resetBtn { margin-left: 16px; }
+  #shareBtn {
+    background: #223049; border: 1px solid #39547e; color: #b9d4ff;
+    border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: .85rem;
+  }
+  #shareBtn:hover { border-color: #7fb3ff; }
+  #resetBtn { background: none; border: none; color: #7fb3ff; cursor: pointer; font-size: .8rem; padding: 0; margin-left: 14px; }
   textarea {
     width: 100%; min-height: 320px; resize: vertical;
     background: #151a22; color: #cfd6de; border: 1px solid #2b3545; border-radius: 12px;
@@ -83,11 +106,17 @@
 
   <section id="card" title="Tap for next exercise">
     <div id="chords" aria-live="polite"></div>
+    <div id="timerbar"><div id="timerfill"></div></div>
     <div id="prevEx"></div>
   </section>
 
-  <button id="nextBtn" type="button">Next exercise</button>
-  <div class="hint">tap the card or press Space for the next one</div>
+  <div class="navrow">
+    <button id="backBtn" type="button" aria-label="Previous exercise">◀</button>
+    <button id="nextBtn" type="button">Next exercise</button>
+    <button id="fwdBtn" type="button" aria-label="Forward">▶</button>
+  </div>
+  <div class="hint">tap the card or press Space · ◀ ▶ (or ←/→) scroll the session ·
+    auto-next <input id="timerSecs" type="number" min="0" step="0.5" value="0" aria-label="Auto-next seconds"> s (0 = off)</div>
 
   <div class="rowline">
     <div id="status"></div>
@@ -100,6 +129,8 @@
   <textarea id="config" spellcheck="false" aria-label="Exercise weights"></textarea>
   <div class="boxlabel">pattern definitions — <code>name Label = Roman chords</code></div>
   <textarea id="patterns" spellcheck="false" aria-label="Pattern definitions"></textarea>
+
+  <div class="presets" id="presets"><span>presets:</span></div>
 
   <details>
     <summary>How to write exercises &amp; patterns</summary>
@@ -117,6 +148,9 @@
        <code>myturn My turnaround = IIIm7 VI7b9 IIm7 bII7 Imaj7</code>,
        then weight it in the exercises box: <code>myturn Bb 80</code>.</p>
     <p>Keys use <code>#</code>/<code>b</code> (C, F#, Bb…). Lines starting with <code>#</code> are comments.
+       The preset pills at the bottom overwrite the exercises box for a given level.
+       ◀/▶ (or ←/→) scroll back and forth through everything shown this session.
+       Set <em>auto-next</em> to e.g. <code>2.5</code> seconds to advance automatically (0 = off).
        <em>copy share link</em> packs both boxes into a URL — opening it loads the lists
        (e.g. your teacher sends you the week's list).</p>
   </details>
@@ -601,8 +635,10 @@ function parseConfig(text) {
 /* ---------- app state & UI ---------- */
 const $ = id => document.getElementById(id);
 const ta = $('config'), taPat = $('patterns'), prevEl = $('prevEx'), chordsEl = $('chords'), statusEl = $('status');
+const backBtn = $('backBtn'), fwdBtn = $('fwdBtn'), timerInput = $('timerSecs'), timerBar = $('timerbar'), timerFill = $('timerfill');
 
-let items = [], lastId = null, currentDesc = null;
+let items = [], lastId = null;
+let hist = [], pos = -1;  // full session history of shown exercises
 
 const STORE_KEY = 'jazz251-config', STORE_PAT = 'jazz251-patterns';
 const save = () => {
@@ -625,13 +661,22 @@ function pick() {
   return chosen;
 }
 
-function next() {
+function render() {
+  const h = hist[pos];
+  // The current exercise's name stays hidden; the one before it is the revealed answer.
+  prevEl.textContent = pos > 0 ? 'previous: ' + hist[pos - 1].desc : '';
+  chordsEl.innerHTML = h.html;
+  backBtn.disabled = pos <= 0;
+  fitChords();
+  armTimer();
+}
+
+function generateNew() {
   if (!items.length) {
     prevEl.textContent = '';
     chordsEl.style.fontSize = '';
     chordsEl.innerHTML = '<span class="empty">No exercises enabled — set a weight &gt; 0 below</span>';
-    lastId = null;
-    currentDesc = null;
+    stopTimer();
     return;
   }
   const ex = pick();
@@ -647,13 +692,34 @@ function next() {
     list = p.chords(ex.key);
     desc = p.name + ' · ' + disp(ex.key);
   }
-  // Reveal the answer for the exercise you just played; keep the new one hidden.
-  prevEl.textContent = currentDesc ? 'previous: ' + currentDesc : '';
-  currentDesc = desc;
-  chordsEl.innerHTML = list
+  const html = list
     .map(c => `<span class="chord">${esc(c.text ?? (disp(c.root) + c.suffix))}</span>`)
     .join('');
-  fitChords();
+  hist.push({ desc, html });
+  pos = hist.length - 1;
+  render();
+}
+
+const goBack = () => { if (pos > 0) { pos--; render(); } };
+const goForward = () => { if (pos < hist.length - 1) { pos++; render(); } else generateNew(); };
+
+/* auto-next timer: a thin left-to-right fill under the exercise */
+let timerId = null;
+function stopTimer() {
+  if (timerId) { clearTimeout(timerId); timerId = null; }
+  timerBar.classList.remove('on');
+  timerFill.style.transition = 'none';
+  timerFill.style.width = '0';
+}
+function armTimer() {
+  stopTimer();
+  const secs = parseFloat(timerInput.value);
+  if (!Number.isFinite(secs) || secs <= 0) return;
+  timerBar.classList.add('on');
+  void timerFill.offsetWidth;  // reflow so the fill restarts from 0
+  timerFill.style.transition = `width ${secs}s linear`;
+  timerFill.style.width = '100%';
+  timerId = setTimeout(goForward, secs * 1000);
 }
 
 // Keep the whole exercise on one line: scale font size to the available width.
@@ -675,11 +741,17 @@ function applyConfig() {
   const errors = [...pr.errors, ...res.errors];
   statusEl.innerHTML = `${items.length} exercise${items.length === 1 ? '' : 's'} on · total weight ${total}`
     + errors.slice(0, 4).map(e => `<span class="err">${esc(e)}</span>`).join('');
-  if (lastId === null) next();  // auto-start once there is something to show
+  if (!hist.length) generateNew();  // auto-start once there is something to show
 }
 
-$('nextBtn').addEventListener('click', next);
-$('card').addEventListener('click', next);
+$('nextBtn').addEventListener('click', goForward);
+$('card').addEventListener('click', goForward);
+backBtn.addEventListener('click', goBack);
+fwdBtn.addEventListener('click', goForward);
+timerInput.addEventListener('input', () => {
+  try { localStorage.setItem('jazz251-timer', timerInput.value); } catch (_) {}
+  armTimer();
+});
 $('resetBtn').addEventListener('click', () => { ta.value = DEFAULT_CONFIG; taPat.value = DEFAULT_PATTERNS; save(); applyConfig(); });
 $('shareBtn').addEventListener('click', async () => {
   const url = location.href.split('#')[0]
@@ -707,14 +779,59 @@ taPat.addEventListener('input', () => { save(); applyConfig(); });
 window.addEventListener('resize', fitChords);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitChords);
 document.addEventListener('keydown', e => {
-  if (e.code !== 'Space' && e.code !== 'Enter') return;
-  if (e.target.closest && e.target.closest('button, textarea, summary, details, a')) return;
+  const actions = { Space: goForward, Enter: goForward, ArrowRight: goForward, ArrowLeft: goBack };
+  const fn = actions[e.code];
+  if (!fn) return;
+  if (e.target.closest && e.target.closest('button, textarea, summary, details, a, input')) return;
   e.preventDefault();
-  next();
+  fn();
+});
+
+/* proficiency presets: each overwrites the exercises box */
+const KEYS_MAJ12 = ['C','F','Bb','Eb','Ab','Db','Gb','B','E','A','D','G'];
+const KEYS_MIN12 = ['A','D','G','C','F','Bb','Eb','G#','C#','F#','B','E'];
+const KEYS_EASY  = ['C','F','G','Bb','D','Eb'];
+const KEYS_EASYM = ['A','D','G','C','E','B'];
+const PRESETS = [
+  ['noob',       [['maj251', ['C','F','G'], 100]]],
+  ['rookie',     [['maj251', KEYS_EASY, 100]]],
+  ['apprentice', [['maj251', KEYS_MAJ12, 100]]],
+  ['player',     [['maj251', KEYS_MAJ12, 40], ['51', KEYS_MAJ12, 60], ['1625', KEYS_EASY, 100]]],
+  ['sideman',    [['maj251', KEYS_MAJ12, 30], ['min251', KEYS_EASYM, 100], ['1625', KEYS_MAJ12, 60]]],
+  ['pro',        [['maj251', KEYS_MAJ12, 40], ['min251', KEYS_MIN12, 80], ['1625', KEYS_MAJ12, 50],
+                  ['3625', KEYS_MAJ12, 50]]],
+  ['bopper',     [['maj251', KEYS_MAJ12, 20], ['min251', KEYS_MIN12, 50], ['36251', KEYS_MAJ12, 50],
+                  ['min1625', KEYS_MIN12, 50], ['trisub251', KEYS_MAJ12, 50], ['backdoor', KEYS_MAJ12, 50]]],
+  ['shredder',   [['min251', KEYS_MIN12, 40], ['36251', KEYS_MAJ12, 40], ['min1625', KEYS_MIN12, 40],
+                  ['trisub251', KEYS_MAJ12, 40], ['backdoor', KEYS_MAJ12, 40], ['sus251', KEYS_MAJ12, 60],
+                  ['alt251', KEYS_MAJ12, 60], ['rich251', KEYS_MAJ12, 60], ['min251maj', KEYS_MIN12, 60]]],
+  ['wizard',     [['alt251', KEYS_MAJ12, 50], ['rich251', KEYS_MAJ12, 50], ['min251maj', KEYS_MIN12, 50],
+                  ['min1625', KEYS_MIN12, 40], ['dimpass', KEYS_MAJ12, 60], ['chrom25', KEYS_MAJ12, 60],
+                  ['4m1', KEYS_MAJ12, 60], ['lady', KEYS_MAJ12, 60]]],
+  ['mastermind', [['maj251', KEYS_MAJ12, 20], ['min251', KEYS_MIN12, 30], ['1625', KEYS_MAJ12, 20],
+                  ['3625', KEYS_MAJ12, 20], ['36251', KEYS_MAJ12, 30], ['min1625', KEYS_MIN12, 30],
+                  ['trisub251', KEYS_MAJ12, 30], ['backdoor', KEYS_MAJ12, 30], ['sus251', KEYS_MAJ12, 30],
+                  ['alt251', KEYS_MAJ12, 40], ['rich251', KEYS_MAJ12, 40], ['min251maj', KEYS_MIN12, 40],
+                  ['dimpass', KEYS_MAJ12, 40], ['chrom25', KEYS_MAJ12, 50], ['4m1', KEYS_MAJ12, 30],
+                  ['lady', KEYS_MAJ12, 50], ['coltrane', KEYS_MAJ12, 100]]],
+];
+const presetsEl = $('presets');
+PRESETS.forEach(([name, parts]) => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.textContent = name;
+  b.addEventListener('click', () => {
+    ta.value = `# preset: ${name}\n\n`
+      + parts.map(([p, ks, w]) => `# ${p}\n` + ks.map(k => `${p} ${k} ${w}`).join('\n')).join('\n\n') + '\n';
+    save();
+    applyConfig();
+  });
+  presetsEl.appendChild(b);
 });
 
 /* ---------- self-test (open index.html#test) ---------- */
 function selfTest() {
+  stopTimer();
   const got = (p, k) => PATTERNS[p].chords(parseKeyName(k)).map(c => disp(c.root) + c.suffix).join(' ');
   const cases = [
     ['maj251', 'C',  'Dm7 G7 Cmaj7'],
@@ -767,7 +884,11 @@ function selfTest() {
 
 /* ---------- init ---------- */
 let stored = null, storedPat = null;
-try { stored = localStorage.getItem(STORE_KEY); storedPat = localStorage.getItem(STORE_PAT); } catch (_) {}
+try {
+  stored = localStorage.getItem(STORE_KEY);
+  storedPat = localStorage.getItem(STORE_PAT);
+  timerInput.value = localStorage.getItem('jazz251-timer') ?? '0';
+} catch (_) {}
 ta.value = stored ?? DEFAULT_CONFIG;
 taPat.value = storedPat ?? DEFAULT_PATTERNS;
 // A shared link carries both boxes in the hash: adopt and persist them.
