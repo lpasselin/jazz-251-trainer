@@ -146,8 +146,6 @@
   <div class="boxlabel">pattern definitions — <code>name Label = Roman chords</code></div>
   <textarea id="patterns" spellcheck="false" aria-label="Pattern definitions"></textarea>
 
-  <div class="presets" id="presets"><span>presets:</span></div>
-
   <details>
     <summary>How to write exercises &amp; patterns</summary>
     <p><strong>Exercises box</strong> — one per line, weight 0–100
@@ -164,13 +162,17 @@
        <code>myturn My turnaround = IIIm7 VI7b9 IIm7 bII7 Imaj7</code>,
        then weight it in the exercises box: <code>myturn Bb 80</code>.</p>
     <p>Keys use <code>#</code>/<code>b</code> (C, F#, Bb…). Lines starting with <code>#</code> are comments.
-       The preset pills at the bottom overwrite the exercises box for a given level.
+       The pills below overwrite the exercises box: <em>levels</em> by difficulty,
+       <em>players</em> with a famous artist's favorite changes.
        Tap the card, press Space, or use ◀/▶ (or ←/→) to move; ◀ scrolls back through
        everything shown this session. <em>auto-next</em> is seconds per chord symbol —
        at 1.2, a 3-chord exercise advances after 3.6 s (0 = off).
        <em>copy share link</em> packs both boxes into a URL — opening it loads the lists
        (e.g. your teacher sends you the week's list).</p>
   </details>
+
+  <div class="presets" id="presets"><span>levels:</span></div>
+  <div class="presets" id="playerPresets"><span>players:</span></div>
 </main>
 
 <script>
@@ -271,6 +273,8 @@ chrom25    Chromatic descending ii-Vs   = IIIm7 bIII7 IIm7 bII7 Imaj7
 4m1        Plagal IV-iv-I               = IVmaj7 IVm7 Imaj7
 lady       Ladybird turnaround          = Imaj7 bIIImaj7 bVImaj7 bIImaj7
 coltrane   Coltrane cycle               = Imaj7 bIII7 bVImaj7 VII7 IIImaj7 V7 Imaj7
+sowhat     Modal vamp ii-iii            = IIm7 IIIm7
+countdown  Countdown ii-V-I             = IIm7 bIII7 bVImaj7 VII7 IIImaj7 V7 Imaj7
 `;
 
 /* ---------- config ---------- */
@@ -595,6 +599,34 @@ coltrane A 0
 coltrane D 0
 coltrane G 0
 
+# Modal vamp ii-iii
+sowhat C 0
+sowhat F 0
+sowhat Bb 0
+sowhat Eb 0
+sowhat Ab 0
+sowhat Db 0
+sowhat Gb 0
+sowhat B 0
+sowhat E 0
+sowhat A 0
+sowhat D 0
+sowhat G 0
+
+# Countdown ii-V-I
+countdown C 0
+countdown F 0
+countdown Bb 0
+countdown Eb 0
+countdown Ab 0
+countdown Db 0
+countdown Gb 0
+countdown B 0
+countdown E 0
+countdown A 0
+countdown D 0
+countdown G 0
+
 # Fixed custom exercises: custom "name" "symbols to show" weight
 custom "example lick" "Dm9 G13 C6/9" 0
 `;
@@ -832,24 +864,56 @@ const PRESETS = [
                   ['dimpass', KEYS_MAJ12, 40], ['chrom25', KEYS_MAJ12, 50], ['4m1', KEYS_MAJ12, 30],
                   ['lady', KEYS_MAJ12, 50], ['coltrane', KEYS_MAJ12, 100]]],
 ];
-const presetsEl = $('presets');
-PRESETS.forEach(([name, parts]) => {
-  const b = document.createElement('button');
-  b.type = 'button';
-  b.textContent = name;
-  b.addEventListener('click', () => {
-    ta.value = `# preset: ${name}\n\n`
-      + parts.map(([p, ks, w]) => `# ${p}\n` + ks.map(k => `${p} ${k} ${w}`).join('\n')).join('\n\n') + '\n';
-    save();
-    applyConfig();
+// Player presets: each artist's favorite changes.
+const PLAYERS = [
+  ['evans',  [['rich251', KEYS_MAJ12, 80], ['min251', KEYS_MIN12, 60], ['min1625', KEYS_MIN12, 50],
+              ['1m625', KEYS_MAJ12, 40]]],
+  ['oscar',  [['maj251', KEYS_MAJ12, 60], ['min251', KEYS_MIN12, 60], ['1625', KEYS_MAJ12, 60],
+              ['3625', KEYS_MAJ12, 50], ['backdoor', KEYS_MAJ12, 40]]],
+  ['barry',  [['dimpass', KEYS_MAJ12, 100], ['maj251', KEYS_MAJ12, 50], ['min251', KEYS_MIN12, 50],
+              ['3625', KEYS_MAJ12, 50], ['chrom25', KEYS_MAJ12, 40]]],
+  ['monk',   [['trisub251', KEYS_MAJ12, 80], ['alt251', KEYS_MAJ12, 80], ['dimpass', KEYS_MAJ12, 60],
+              ['min51', KEYS_MIN12, 40]]],
+  ['mccoy',  [['sus251', KEYS_MAJ12, 100], ['sowhat', KEYS_MAJ12, 60], ['alt251', KEYS_MAJ12, 50],
+              ['min251', KEYS_MIN12, 40]]],
+  ['herbie', [['sus251', KEYS_MAJ12, 60], ['alt251', KEYS_MAJ12, 60], ['rich251', KEYS_MAJ12, 60],
+              ['backdoor', KEYS_MAJ12, 50], ['4m1', KEYS_MAJ12, 50]]],
+  ['trane',  [['coltrane', KEYS_MAJ12, 100], ['countdown', KEYS_MAJ12, 80], ['min251', KEYS_MIN12, 30]]],
+  ['tatum',  [['trisub251', KEYS_MAJ12, 70], ['chrom25', KEYS_MAJ12, 70], ['dimpass', KEYS_MAJ12, 60],
+              ['lady', KEYS_MAJ12, 60], ['36251', KEYS_MAJ12, 50]]],
+];
+
+function addPresets(el, list) {
+  list.forEach(([name, parts]) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = name;
+    b.addEventListener('click', () => {
+      // If the preset uses a pattern missing from the patterns box, pull its default definition in.
+      const defLines = DEFAULT_PATTERNS.split('\n');
+      parts.forEach(([p]) => {
+        if (!PATTERNS[p]) {
+          const line = defLines.find(l => l.trim().toLowerCase().startsWith(p + ' '));
+          if (line) taPat.value += (taPat.value.endsWith('\n') ? '' : '\n') + line + '\n';
+        }
+      });
+      ta.value = `# preset: ${name}\n\n`
+        + parts.map(([p, ks, w]) => `# ${p}\n` + ks.map(k => `${p} ${k} ${w}`).join('\n')).join('\n\n') + '\n';
+      save();
+      applyConfig();
+    });
+    el.appendChild(b);
   });
-  presetsEl.appendChild(b);
-});
+}
+addPresets($('presets'), PRESETS);
+addPresets($('playerPresets'), PLAYERS);
 
 /* ---------- self-test (open index.html#test) ---------- */
 function selfTest() {
   stopTimer();
-  const got = (p, k) => PATTERNS[p].chords(parseKeyName(k)).map(c => disp(c.root) + c.suffix).join(' ');
+  // Test the shipped defaults, independent of whatever is stored in the boxes.
+  const pats = parsePatterns(DEFAULT_PATTERNS).pats;
+  const got = (p, k) => pats[p].chords(parseKeyName(k)).map(c => disp(c.root) + c.suffix).join(' ');
   const cases = [
     ['maj251', 'C',  'Dm7 G7 Cmaj7'],
     ['maj251', 'Eb', 'Fm7 B♭7 E♭maj7'],
@@ -878,6 +942,8 @@ function selfTest() {
     ['4m1',     'C',  'Fmaj7 Fm7 Cmaj7'],
     ['lady',    'C',  'Cmaj7 E♭maj7 A♭maj7 D♭maj7'],
     ['coltrane','C',  'Cmaj7 E♭7 A♭maj7 B7 Emaj7 G7 Cmaj7'],
+    ['sowhat',  'C',  'Dm7 Em7'],
+    ['countdown','C', 'Dm7 E♭7 A♭maj7 B7 Emaj7 G7 Cmaj7'],
   ];
   const lines = cases.map(([p, k, want]) => {
     const g = got(p, k);
