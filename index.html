@@ -26,10 +26,14 @@
        letter-spacing: .16em; text-transform: uppercase; color: #9aa0a6; }
   #card {
     background: #1a212b; border: 1px solid #2b3545; border-radius: 20px;
-    padding: 36px 20px; min-height: 240px; cursor: pointer;
+    padding: 36px 20px 80px; min-height: 240px; cursor: pointer; position: relative;
     user-select: none; -webkit-user-select: none; touch-action: manipulation;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 24px; text-align: center;
+  }
+  #cardBottom {
+    position: absolute; bottom: 16px; left: 16px; right: 16px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
   }
   #prevEx { color: #8d97a3; font-size: clamp(.9rem, 2.4vw, 1.05rem); letter-spacing: .03em; min-height: 1.3em; }
   #chords {
@@ -54,9 +58,20 @@
     background: #222b38; color: #7fb3ff; font-size: 1.15rem; touch-action: manipulation;
   }
   #backBtn:disabled { opacity: .35; cursor: default; }
-  #timerbar { width: min(420px, 85%); height: 3px; border-radius: 2px; background: #2b3545; overflow: hidden; display: none; }
-  #timerbar.on { display: block; }
-  #timerfill { height: 100%; width: 0; background: #7fb3ff; }
+  #timerbar {
+    position: relative; width: min(360px, 70%); height: 8px; visibility: hidden;
+    background: linear-gradient(#232b38, #232b38) center / 100% 2px no-repeat;
+  }
+  #timerbar.on { visibility: visible; }
+  #timerbar::before, #timerbar::after {
+    content: ''; position: absolute; top: 0; width: 2px; height: 100%; background: #44546d;
+  }
+  #timerbar::before { left: 0; }
+  #timerbar::after { right: 0; }
+  #timerfill {
+    position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    height: 2px; width: 0; background: #44546d;
+  }
   #timerSecs {
     width: 3.4em; background: #151a22; color: #cfd6de; border: 1px solid #2b3545;
     border-radius: 6px; padding: 2px 4px; font-size: .78rem; text-align: center;
@@ -95,7 +110,7 @@
   @media (max-width: 480px) {
     body { padding: 12px 10px 40px; }
     main { gap: 12px; }
-    #card { min-height: 52vh; padding: 24px 12px; border-radius: 16px; }
+    #card { min-height: 52vh; padding: 24px 12px 70px; border-radius: 16px; }
     #nextBtn { padding: 22px; font-size: 1.35rem; }
   }
 </style>
@@ -106,8 +121,10 @@
 
   <section id="card" title="Tap for next exercise">
     <div id="chords" aria-live="polite"></div>
-    <div id="timerbar"><div id="timerfill"></div></div>
-    <div id="prevEx"></div>
+    <div id="cardBottom">
+      <div id="prevEx"></div>
+      <div id="timerbar"><div id="timerfill"></div></div>
+    </div>
   </section>
 
   <div class="navrow">
@@ -115,8 +132,7 @@
     <button id="nextBtn" type="button">Next exercise</button>
     <button id="fwdBtn" type="button" aria-label="Forward">▶</button>
   </div>
-  <div class="hint">tap the card or press Space · ◀ ▶ (or ←/→) scroll the session ·
-    auto-next <input id="timerSecs" type="number" min="0" step="0.5" value="0" aria-label="Auto-next seconds"> s (0 = off)</div>
+  <div class="hint">auto-next <input id="timerSecs" type="number" min="0" step="any" value="0" aria-label="Auto-next seconds per chord"> s per chord</div>
 
   <div class="rowline">
     <div id="status"></div>
@@ -149,8 +165,9 @@
        then weight it in the exercises box: <code>myturn Bb 80</code>.</p>
     <p>Keys use <code>#</code>/<code>b</code> (C, F#, Bb…). Lines starting with <code>#</code> are comments.
        The preset pills at the bottom overwrite the exercises box for a given level.
-       ◀/▶ (or ←/→) scroll back and forth through everything shown this session.
-       Set <em>auto-next</em> to e.g. <code>2.5</code> seconds to advance automatically (0 = off).
+       Tap the card, press Space, or use ◀/▶ (or ←/→) to move; ◀ scrolls back through
+       everything shown this session. <em>auto-next</em> is seconds per chord symbol —
+       at 1.2, a 3-chord exercise advances after 3.6 s (0 = off).
        <em>copy share link</em> packs both boxes into a URL — opening it loads the lists
        (e.g. your teacher sends you the week's list).</p>
   </details>
@@ -259,8 +276,6 @@ coltrane   Coltrane cycle               = Imaj7 bIII7 bVImaj7 VII7 IIImaj7 V7 Im
 /* ---------- config ---------- */
 const DEFAULT_CONFIG = `# One line per exercise:  pattern  key  weight
 # Weight 0-100: 0 = off, higher = comes up more often.
-# Patterns: maj251, min251, 1625, 3625, trisub251, backdoor,
-#           min1625, 36251, chord (single chord, e.g. "chord Bb9 100")
 
 # Major ii-V-I (you know most of these - kept light)
 maj251 C 20
@@ -715,11 +730,13 @@ function armTimer() {
   stopTimer();
   const secs = parseFloat(timerInput.value);
   if (!Number.isFinite(secs) || secs <= 0) return;
+  const count = chordsEl.querySelectorAll('.chord').length || 1;
+  const total = secs * count;  // the setting is seconds per chord symbol
   timerBar.classList.add('on');
   void timerFill.offsetWidth;  // reflow so the fill restarts from 0
-  timerFill.style.transition = `width ${secs}s linear`;
+  timerFill.style.transition = `width ${total}s linear`;
   timerFill.style.width = '100%';
-  timerId = setTimeout(goForward, secs * 1000);
+  timerId = setTimeout(goForward, total * 1000);
 }
 
 // Keep the whole exercise on one line: scale font size to the available width.
