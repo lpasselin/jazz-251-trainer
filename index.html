@@ -162,8 +162,8 @@
        <code>myturn My turnaround = IIIm7 VI7b9 IIm7 bII7 Imaj7</code>,
        then weight it in the exercises box: <code>myturn Bb 80</code>.</p>
     <p>Keys use <code>#</code>/<code>b</code> (C, F#, Bb…). Lines starting with <code>#</code> are comments.
-       The pills below overwrite the exercises box: <em>levels</em> by difficulty,
-       <em>players</em> with a famous artist's favorite changes.
+       The preset pills below overwrite the exercises box — difficulty levels first,
+       then famous players' favorite changes.
        Tap the card, press Space, or use ◀/▶ (or ←/→) to move; ◀ scrolls back through
        everything shown this session. <em>auto-next</em> is seconds per chord symbol —
        at 1.2, a 3-chord exercise advances after 3.6 s (0 = off).
@@ -171,8 +171,7 @@
        (e.g. your teacher sends you the week's list).</p>
   </details>
 
-  <div class="presets" id="presets"><span>levels:</span></div>
-  <div class="presets" id="playerPresets"><span>players:</span></div>
+  <div class="presets" id="presets"><span>presets:</span></div>
 </main>
 
 <script>
@@ -906,7 +905,7 @@ function addPresets(el, list) {
   });
 }
 addPresets($('presets'), PRESETS);
-addPresets($('playerPresets'), PLAYERS);
+addPresets($('presets'), PLAYERS);
 
 /* ---------- self-test (open index.html#test) ---------- */
 function selfTest() {
