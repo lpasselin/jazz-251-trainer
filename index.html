@@ -9,7 +9,8 @@
 <style>
   @font-face {
     font-family: 'MuseJazz Text';
-    src: url('MuseJazzText.otf') format('opentype');
+    /* Loaded from CDN (jsDelivr mirror of the MuseScore repo, OFL-licensed) so the app stays a single file. */
+    src: url('https://cdn.jsdelivr.net/gh/musescore/MuseScore@v4.4.2/fonts/musejazz/MuseJazzText.otf') format('opentype');
     font-display: swap;
   }
   :root { color-scheme: dark; }
@@ -32,12 +33,13 @@
   }
   #prevEx { color: #8d97a3; font-size: clamp(.9rem, 2.4vw, 1.05rem); letter-spacing: .03em; min-height: 1.3em; }
   #chords {
-    display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline;
-    column-gap: clamp(18px, 5vw, 44px); row-gap: 12px;
+    display: flex; width: 100%; flex-wrap: nowrap; justify-content: center; align-items: baseline;
+    column-gap: .55em;
     font-family: 'MuseJazz Text', Georgia, serif; font-weight: 400;
     font-size: clamp(2.3rem, 9vw, 4.3rem); line-height: 1.1;
   }
   .chord { white-space: nowrap; }
+  .empty { white-space: normal; }
   .empty { font-size: 1.05rem; font-weight: 500; color: #9aa0a6; }
   .testres { font-size: .95rem; font-weight: 500; line-height: 1.7; text-align: left; color: #cfd6de; }
   #nextBtn {
@@ -50,7 +52,8 @@
   .rowline { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
   #status { font-size: .85rem; color: #9aa0a6; }
   #status .err { color: #ff8a80; display: block; }
-  #resetBtn { background: none; border: none; color: #7fb3ff; cursor: pointer; font-size: .8rem; padding: 0; }
+  #resetBtn, #shareBtn { background: none; border: none; color: #7fb3ff; cursor: pointer; font-size: .8rem; padding: 0; }
+  #resetBtn { margin-left: 16px; }
   textarea {
     width: 100%; min-height: 320px; resize: vertical;
     background: #151a22; color: #cfd6de; border: 1px solid #2b3545; border-radius: 12px;
@@ -67,7 +70,6 @@
     body { padding: 12px 10px 40px; }
     main { gap: 12px; }
     #card { min-height: 52vh; padding: 24px 12px; border-radius: 16px; }
-    #chords { font-size: clamp(2.4rem, 13vw, 3.4rem); }
     #nextBtn { padding: 22px; font-size: 1.35rem; }
   }
 </style>
@@ -86,7 +88,10 @@
 
   <div class="rowline">
     <div id="status"></div>
-    <button id="resetBtn" type="button">reset to defaults</button>
+    <div>
+      <button id="shareBtn" type="button">copy share link</button>
+      <button id="resetBtn" type="button">reset to defaults</button>
+    </div>
   </div>
   <textarea id="config" spellcheck="false" aria-label="Exercise weights"></textarea>
 
@@ -95,7 +100,9 @@
     <p>One exercise per line: <code>pattern key weight</code>. Weight is 0–100:
        <code>0</code> disables the line, higher weights come up more often
        (a 100 line is drawn 10× as often as a 10 line). Keys use <code>#</code>/<code>b</code>
-       (C, F#, Bb…). Lines starting with <code>#</code> are comments.</p>
+       (C, F#, Bb…). Lines starting with <code>#</code> are comments.
+       <em>copy share link</em> packs this whole list into a URL — send it to someone
+       (e.g. your teacher sends you the week's list) and opening it loads the list.</p>
     <table>
       <tr><td><code>maj251</code></td><td>Major ii–V–I</td><td>Dm7 · G7 · Cmaj7</td></tr>
       <tr><td><code>min251</code></td><td>Minor ii–V–i</td><td>Dm7♭5 · G7♭9 · Cm7</td></tr>
@@ -103,6 +110,9 @@
       <tr><td><code>3625</code></td><td>Turnaround iii–VI–ii–V</td><td>Em7 · A7 · Dm7 · G7</td></tr>
       <tr><td><code>trisub251</code></td><td>Tritone sub ii–♭II–I</td><td>Dm7 · D♭7 · Cmaj7</td></tr>
       <tr><td><code>backdoor</code></td><td>Backdoor iv–♭VII–I</td><td>Fm7 · B♭7 · Cmaj7</td></tr>
+      <tr><td><code>min1625</code></td><td>Minor turnaround i–VI–ii–V</td><td>Cm7 · A♭maj7 · Dm7♭5 · G7♭9</td></tr>
+      <tr><td><code>36251</code></td><td>iii–VI–ii–V–I</td><td>Em7 · A7 · Dm7 · G7 · Cmaj7</td></tr>
+      <tr><td><code>chord</code></td><td>Single chord (any symbol)</td><td><code>chord Bb9 100</code> → B♭9</td></tr>
     </table>
   </details>
 </main>
@@ -120,6 +130,8 @@ const SIMPLE = [['C',0],['D',-1],['D',0],['E',-1],['E',0],['F',0],['G',-1],['G',
 
 const pcOf = n => ((LETTER_PC[n.letter] + n.acc) % 12 + 12) % 12;
 const disp = n => n.letter + (n.acc > 0 ? '♯'.repeat(n.acc) : '♭'.repeat(-n.acc));
+// "7b9" -> "7♭9", "7#11" -> "7♯11" (only before digits, so "sus"/"alt" stay intact)
+const prettySuffix = s => s.replace(/b(?=\d)/g, '♭').replace(/#(?=\d)/g, '♯');
 const chord = (root, suffix) => ({ root, suffix });
 
 function parseKeyName(s) {
@@ -152,12 +164,17 @@ const PATTERNS = {
                chords: t => [chord(deg(t,1,2),'m7'), chord(deg(t,1,1),'7'), chord(t,'maj7')] },
   backdoor:  { name: 'Backdoor iv–♭VII–I', keyLabel: k => k,
                chords: t => [chord(deg(t,3,5),'m7'), chord(deg(t,6,10),'7'), chord(t,'maj7')] },
+  min1625:   { name: 'Minor turnaround i–VI–ii–V', keyLabel: k => k + 'm',
+               chords: t => [chord(t,'m7'), chord(deg(t,5,8),'maj7'), chord(deg(t,1,2),'m7♭5'), chord(deg(t,4,7),'7♭9')] },
+  '36251':   { name: 'iii–VI–ii–V–I', keyLabel: k => k,
+               chords: t => [chord(deg(t,2,4),'m7'), chord(deg(t,5,9),'7'), chord(deg(t,1,2),'m7'), chord(deg(t,4,7),'7'), chord(t,'maj7')] },
 };
 
 /* ---------- config ---------- */
 const DEFAULT_CONFIG = `# One line per exercise:  pattern  key  weight
 # Weight 0-100: 0 = off, higher = comes up more often.
-# Patterns: maj251, min251, 1625, 3625, trisub251, backdoor
+# Patterns: maj251, min251, 1625, 3625, trisub251, backdoor,
+#           min1625, 36251, chord (single chord, e.g. "chord Bb9 100")
 
 # Major ii-V-I (you know most of these - kept light)
 maj251 C 20
@@ -242,6 +259,44 @@ backdoor E 30
 backdoor A 30
 backdoor D 30
 backdoor G 30
+
+# Minor turnaround i-VI-ii-V
+min1625 A 40
+min1625 D 40
+min1625 G 40
+min1625 C 40
+min1625 F 40
+min1625 Bb 40
+min1625 Eb 40
+min1625 G# 40
+min1625 C# 40
+min1625 F# 40
+min1625 B 40
+min1625 E 40
+
+# Full 3-6-2-5-1
+36251 C 30
+36251 F 30
+36251 Bb 30
+36251 Eb 30
+36251 Ab 30
+36251 Db 30
+36251 Gb 30
+36251 B 30
+36251 E 30
+36251 A 30
+36251 D 30
+36251 G 30
+
+# Single chords: any symbol works
+chord Bb9 0
+chord Eb9 0
+chord F13 0
+chord C7#9 0
+chord Amaj9 0
+chord Dm9 0
+chord G7alt 0
+chord Bm7b5 0
 `;
 
 const esc = s => s.replace(/[&<>"]/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[ch]));
@@ -254,13 +309,21 @@ function parseConfig(text) {
     const parts = line.split(/\s+/);
     if (parts.length !== 3) { errors.push(`Line ${i+1}: expected "pattern key weight"`); return; }
     const pname = parts[0].toLowerCase();
-    if (!PATTERNS[pname]) { errors.push(`Line ${i+1}: unknown pattern "${parts[0]}"`); return; }
-    const key = parseKeyName(parts[1]);
-    if (!key) { errors.push(`Line ${i+1}: bad key "${parts[1]}"`); return; }
     const weight = Number(parts[2]);
     if (!Number.isFinite(weight) || weight < 0 || weight > 100) {
       errors.push(`Line ${i+1}: weight must be 0-100, got "${parts[2]}"`); return;
     }
+    if (pname === 'chord') {  // single chord: the middle token is a full symbol, e.g. Bb9
+      const m = /^([A-Ga-g](?:#{1,2}|b{1,2})?)(\S*)$/.exec(parts[1]);
+      const root = m && parseKeyName(m[1]);
+      if (!root) { errors.push(`Line ${i+1}: bad chord "${parts[1]}"`); return; }
+      const suffix = prettySuffix(m[2]);
+      if (weight > 0) items.push({ pattern: 'chord', key: root, suffix, weight, id: 'chord|' + disp(root) + suffix });
+      return;
+    }
+    if (!PATTERNS[pname]) { errors.push(`Line ${i+1}: unknown pattern "${parts[0]}"`); return; }
+    const key = parseKeyName(parts[1]);
+    if (!key) { errors.push(`Line ${i+1}: bad key "${parts[1]}"`); return; }
     if (weight > 0) items.push({ pattern: pname, key, weight, id: pname + '|' + disp(key) });
   });
   return { items, errors };
@@ -291,19 +354,39 @@ function pick() {
 function next() {
   if (!items.length) {
     prevEl.textContent = '';
+    chordsEl.style.fontSize = '';
     chordsEl.innerHTML = '<span class="empty">No exercises enabled — set a weight &gt; 0 below</span>';
     lastId = null;
     currentDesc = null;
     return;
   }
   const ex = pick();
-  const p = PATTERNS[ex.pattern];
+  let list, desc;
+  if (ex.pattern === 'chord') {
+    list = [chord(ex.key, ex.suffix)];
+    desc = 'Single chord · ' + disp(ex.key) + ex.suffix;
+  } else {
+    const p = PATTERNS[ex.pattern];
+    list = p.chords(ex.key);
+    desc = p.name + ' · ' + p.keyLabel(disp(ex.key));
+  }
   // Reveal the answer for the exercise you just played; keep the new one hidden.
   prevEl.textContent = currentDesc ? 'previous: ' + currentDesc : '';
-  currentDesc = p.name + ' · ' + p.keyLabel(disp(ex.key));
-  chordsEl.innerHTML = p.chords(ex.key)
+  currentDesc = desc;
+  chordsEl.innerHTML = list
     .map(c => `<span class="chord">${disp(c.root)}${c.suffix}</span>`)
     .join('');
+  fitChords();
+}
+
+// Keep the whole exercise on one line: scale font size to the available width.
+function fitChords() {
+  if (!chordsEl.querySelector('.chord')) { chordsEl.style.fontSize = ''; return; }
+  chordsEl.style.fontSize = '16px';  // measure at a known size, then scale linearly
+  const kids = [...chordsEl.children];
+  const need = kids.reduce((s, k) => s + k.offsetWidth, 0) + 16 * 0.55 * (kids.length - 1);
+  const size = Math.min(88, Math.max(14, 16 * (chordsEl.clientWidth / need) * 0.96));
+  chordsEl.style.fontSize = size + 'px';
 }
 
 function applyConfig() {
@@ -318,7 +401,28 @@ function applyConfig() {
 $('nextBtn').addEventListener('click', next);
 $('card').addEventListener('click', next);
 $('resetBtn').addEventListener('click', () => { ta.value = DEFAULT_CONFIG; save(); applyConfig(); });
+$('shareBtn').addEventListener('click', async () => {
+  const url = location.href.split('#')[0] + '#cfg=' + encodeURIComponent(ta.value);
+  let ok = false;
+  try { await navigator.clipboard.writeText(url); ok = true; } catch (_) {}
+  if (!ok) {  // older browsers / non-secure contexts
+    try {
+      const tmp = document.createElement('textarea');
+      tmp.value = url;
+      document.body.appendChild(tmp);
+      tmp.select();
+      ok = document.execCommand('copy');
+      tmp.remove();
+    } catch (_) {}
+  }
+  if (!ok) { try { window.prompt('Copy this link:', url); } catch (_) {} }
+  const b = $('shareBtn');
+  b.textContent = ok ? 'copied ✓' : 'copy failed';
+  setTimeout(() => { b.textContent = 'copy share link'; }, 1500);
+});
 ta.addEventListener('input', () => { save(); applyConfig(); });
+window.addEventListener('resize', fitChords);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitChords);
 document.addEventListener('keydown', e => {
   if (e.code !== 'Space' && e.code !== 'Enter') return;
   if (e.target.closest && e.target.closest('button, textarea, summary, details, a')) return;
@@ -346,12 +450,22 @@ function selfTest() {
     ['trisub251', 'Gb', 'A♭m7 G7 G♭maj7'],
     ['backdoor', 'C',  'Fm7 B♭7 Cmaj7'],
     ['backdoor', 'Ab', 'D♭m7 G♭7 A♭maj7'],
+    ['min1625', 'C',  'Cm7 A♭maj7 Dm7♭5 G7♭9'],
+    ['min1625', 'F#', 'F♯m7 Dmaj7 G♯m7♭5 C♯7♭9'],
+    ['36251',   'C',  'Em7 A7 Dm7 G7 Cmaj7'],
   ];
   const lines = cases.map(([p, k, want]) => {
     const g = got(p, k);
     return (g === want ? 'PASS  ' : 'FAIL  ') + `${p} ${k} → ${g}` + (g === want ? '' : `   (want: ${want})`);
   });
+  // Single-chord lines go through parseConfig, so check that path too.
+  const cp = s => { const it = parseConfig(s).items[0]; return it ? disp(it.key) + it.suffix : 'parse error'; };
+  [['chord Bb9 50', 'B♭9'], ['chord F#m7b5 50', 'F♯m7♭5'], ['chord G7alt 50', 'G7alt']].forEach(([src, want]) => {
+    const g = cp(src);
+    lines.push((g === want ? 'PASS  ' : 'FAIL  ') + `${src} → ${g}` + (g === want ? '' : `   (want: ${want})`));
+  });
   const allPass = lines.every(l => l.startsWith('PASS'));
+  chordsEl.style.fontSize = '';
   prevEl.textContent = allPass ? 'Self-test: all passed ✓' : 'Self-test: FAILURES';
   chordsEl.innerHTML = `<div class="testres">${lines.map(esc).join('<br>')}</div>`;
   console.log(lines.join('\n'));
@@ -361,6 +475,14 @@ function selfTest() {
 let stored = null;
 try { stored = localStorage.getItem(STORE_KEY); } catch (_) {}
 ta.value = stored ?? DEFAULT_CONFIG;
+// A shared link carries the whole exercise list in the hash: adopt and persist it.
+if (location.hash.startsWith('#cfg=')) {
+  try {
+    ta.value = decodeURIComponent(location.hash.slice(5));
+    save();
+    history.replaceState(null, '', location.pathname + location.search);
+  } catch (_) {}
+}
 applyConfig();
 if (location.hash === '#test') selfTest();
 })();
