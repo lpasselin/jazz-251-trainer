@@ -38,7 +38,7 @@
   #prevEx { color: #8d97a3; font-size: clamp(.9rem, 2.4vw, 1.05rem); letter-spacing: .03em; min-height: 1.3em; }
   #chords {
     display: flex; width: 100%; flex-wrap: nowrap; justify-content: center; align-items: baseline;
-    column-gap: .55em;
+    column-gap: .55em; row-gap: .3em;
     font-family: 'MuseJazz Text', Georgia, serif; font-weight: 400;
     font-size: clamp(2.3rem, 9vw, 4.3rem); line-height: 1.1;
   }
@@ -294,6 +294,18 @@ ctdim      Common-tone dim              = Imaj7 Idim7 Imaj7
 cliche     Minor line cliche            = Im ImMaj7 Im7 Im6
 bridge     Rhythm-changes bridge        = III7 VI7 II7 V7
 aug51      V7#5 to I                    = V7#5 Imaj7
+old251     Old-school ii-V-I            = IIm7 V9 I6/9
+min251six  Minor ii-V-i to m6           = IIm7b5 V7b9 Im6
+fullbd     Full backdoor IV-iv-bVII-I   = IVmaj7 IVm7 bVII7 Imaj7
+sec4       I-I7-IV-iv-I                 = Imaj7 I7 IVmaj7 IVm7 Imaj7
+mario      Borrowed bVI-bVII-I          = bVI bVII I
+creep      Creep I-III-IV-iv            = I III IV IVm
+phryg      Phrygian vamp i-bII          = Im bII
+susvamp    Sus vamp I7sus-bIII7sus      = I7sus4 bIII7sus4
+domcycle   Dominant cycle in 4ths       = I7 IV7 bVII7 bIII7 bVI7 bII7 bV7 VII7 III7 VI7 II7 V7 I7
+jazzblues  Jazz 12-bar blues            = I7 IV7 I7 Vm7 I7 IV7 #IVdim7 I7 IIIm7 VI7b9 IIm7 V7 I7 VI7 IIm7 V7
+minblues12 Minor 12-bar blues           = Im7 Im7 Im7 Im7 IVm7 IVm7 Im7 Im7 bVI7 V7b9 Im7 V7b9
+birdblues  Bird blues                   = Imaj7 VIIm7b5 III7 VIm7 II7 Vm7 I7 IV7 IVm7 bVII7 IIIm7 VI7 bIIIm7 bVI7 IIm7 V7 Imaj7
 `;
 
 /* ---------- config ---------- */
@@ -870,6 +882,174 @@ aug51 A 0
 aug51 D 0
 aug51 G 0
 
+# Old-school ii-V-I (6/9)
+old251 C 0
+old251 F 0
+old251 Bb 0
+old251 Eb 0
+old251 Ab 0
+old251 Db 0
+old251 Gb 0
+old251 B 0
+old251 E 0
+old251 A 0
+old251 D 0
+old251 G 0
+
+# Minor ii-V-i to m6
+min251six A 0
+min251six D 0
+min251six G 0
+min251six C 0
+min251six F 0
+min251six Bb 0
+min251six Eb 0
+min251six G# 0
+min251six C# 0
+min251six F# 0
+min251six B 0
+min251six E 0
+
+# Full backdoor IV-iv-bVII-I
+fullbd C 0
+fullbd F 0
+fullbd Bb 0
+fullbd Eb 0
+fullbd Ab 0
+fullbd Db 0
+fullbd Gb 0
+fullbd B 0
+fullbd E 0
+fullbd A 0
+fullbd D 0
+fullbd G 0
+
+# I-I7-IV-iv-I
+sec4 C 0
+sec4 F 0
+sec4 Bb 0
+sec4 Eb 0
+sec4 Ab 0
+sec4 Db 0
+sec4 Gb 0
+sec4 B 0
+sec4 E 0
+sec4 A 0
+sec4 D 0
+sec4 G 0
+
+# Borrowed bVI-bVII-I
+mario C 0
+mario F 0
+mario Bb 0
+mario Eb 0
+mario Ab 0
+mario Db 0
+mario Gb 0
+mario B 0
+mario E 0
+mario A 0
+mario D 0
+mario G 0
+
+# Creep I-III-IV-iv
+creep C 0
+creep F 0
+creep Bb 0
+creep Eb 0
+creep Ab 0
+creep Db 0
+creep Gb 0
+creep B 0
+creep E 0
+creep A 0
+creep D 0
+creep G 0
+
+# Phrygian vamp i-bII
+phryg A 0
+phryg D 0
+phryg G 0
+phryg C 0
+phryg F 0
+phryg Bb 0
+phryg Eb 0
+phryg G# 0
+phryg C# 0
+phryg F# 0
+phryg B 0
+phryg E 0
+
+# Sus vamp I7sus-bIII7sus
+susvamp C 0
+susvamp F 0
+susvamp Bb 0
+susvamp Eb 0
+susvamp Ab 0
+susvamp Db 0
+susvamp Gb 0
+susvamp B 0
+susvamp E 0
+susvamp A 0
+susvamp D 0
+susvamp G 0
+
+# Dominant cycle in 4ths
+domcycle C 0
+domcycle F 0
+domcycle Bb 0
+domcycle Eb 0
+domcycle Ab 0
+domcycle Db 0
+domcycle Gb 0
+domcycle B 0
+domcycle E 0
+domcycle A 0
+domcycle D 0
+domcycle G 0
+
+# Jazz 12-bar blues
+jazzblues C 0
+jazzblues F 0
+jazzblues Bb 0
+jazzblues Eb 0
+jazzblues Ab 0
+jazzblues Db 0
+jazzblues Gb 0
+jazzblues B 0
+jazzblues E 0
+jazzblues A 0
+jazzblues D 0
+jazzblues G 0
+
+# Minor 12-bar blues
+minblues12 A 0
+minblues12 D 0
+minblues12 G 0
+minblues12 C 0
+minblues12 F 0
+minblues12 Bb 0
+minblues12 Eb 0
+minblues12 G# 0
+minblues12 C# 0
+minblues12 F# 0
+minblues12 B 0
+minblues12 E 0
+
+# Bird blues
+birdblues C 0
+birdblues F 0
+birdblues Bb 0
+birdblues Eb 0
+birdblues Ab 0
+birdblues Db 0
+birdblues Gb 0
+birdblues B 0
+birdblues E 0
+birdblues A 0
+birdblues D 0
+birdblues G 0
+
 # Fixed custom exercises: custom "name" "symbols to show" weight
 custom "example lick" "Dm9 G13 C6/9" 0
 `;
@@ -1014,14 +1194,17 @@ function armTimer() {
   timerId = setTimeout(goForward, total * 1000);
 }
 
-// Keep the whole exercise on one line: scale font size to the available width.
+// Keep the exercise on one line, scaling the font to the width; very long
+// progressions (blues forms etc.) wrap into systems like a real chart instead.
 function fitChords() {
-  if (!chordsEl.querySelector('.chord')) { chordsEl.style.fontSize = ''; return; }
+  if (!chordsEl.querySelector('.chord')) { chordsEl.style.fontSize = ''; chordsEl.style.flexWrap = 'nowrap'; return; }
+  chordsEl.style.flexWrap = 'nowrap';
   chordsEl.style.fontSize = '16px';  // measure at a known size, then scale linearly
   const kids = [...chordsEl.children];
   const need = kids.reduce((s, k) => s + k.offsetWidth, 0) + 16 * 0.55 * (kids.length - 1);
-  const size = Math.min(88, Math.max(14, 16 * (chordsEl.clientWidth / need) * 0.96));
-  chordsEl.style.fontSize = size + 'px';
+  let size = 16 * (chordsEl.clientWidth / need) * 0.96;
+  if (size < 22) { chordsEl.style.flexWrap = 'wrap'; size = 22; }
+  chordsEl.style.fontSize = Math.min(88, size) + 'px';
 }
 
 function applyConfig() {
@@ -1132,7 +1315,8 @@ const STYLES = [
                  ['145', KEYS_MAJ12, 40]]],
   ['rock',      [['axis', KEYS_MAJ12, 70], ['andalus', KEYS_MIN12, 70], ['145', KEYS_MAJ12, 50],
                  ['pop4', KEYS_MAJ12, 40]]],
-  ['blues',     [['blues12', KEYS_MAJ12, 100], ['145', KEYS_MAJ12, 30]]],
+  ['blues',     [['jazzblues', KEYS_MAJ12, 100], ['blues12', KEYS_MAJ12, 50], ['minblues12', KEYS_MIN12, 60],
+                 ['birdblues', KEYS_MAJ12, 40], ['145', KEYS_MAJ12, 20]]],
   ['gospel',    [['736', KEYS_MAJ12, 80], ['4m1', KEYS_MAJ12, 60], ['rich251', KEYS_MAJ12, 50],
                  ['min251', KEYS_MIN12, 40]]],
   ['classical', [['canon', KEYS_MAJ12, 70], ['andalus', KEYS_MIN12, 50], ['51', KEYS_MAJ12, 60]]],
@@ -1218,6 +1402,18 @@ function selfTest() {
     ['cliche',  'A',  'Am AmMaj7 Am7 Am6'],
     ['bridge',  'C',  'E7 A7 D7 G7'],
     ['aug51',   'C',  'G7♯5 Cmaj7'],
+    ['old251',  'C',  'Dm7 G9 C6/9'],
+    ['min251six','C', 'Dm7♭5 G7♭9 Cm6'],
+    ['fullbd',  'C',  'Fmaj7 Fm7 B♭7 Cmaj7'],
+    ['sec4',    'C',  'Cmaj7 C7 Fmaj7 Fm7 Cmaj7'],
+    ['mario',   'C',  'A♭ B♭ C'],
+    ['creep',   'C',  'C E F Fm'],
+    ['phryg',   'A',  'Am B♭'],
+    ['susvamp', 'C',  'C7sus4 E♭7sus4'],
+    ['domcycle','C',  'C7 F7 B♭7 E♭7 A♭7 D♭7 G♭7 B7 E7 A7 D7 G7 C7'],
+    ['jazzblues','C', 'C7 F7 C7 Gm7 C7 F7 F♯dim7 C7 Em7 A7♭9 Dm7 G7 C7 A7 Dm7 G7'],
+    ['minblues12','C','Cm7 Cm7 Cm7 Cm7 Fm7 Fm7 Cm7 Cm7 A♭7 G7♭9 Cm7 G7♭9'],
+    ['birdblues','C', 'Cmaj7 Bm7♭5 E7 Am7 D7 Gm7 C7 F7 Fm7 B♭7 Em7 A7 E♭m7 A♭7 Dm7 G7 Cmaj7'],
   ];
   const lines = cases.map(([p, k, want]) => {
     const g = got(p, k);
