@@ -284,6 +284,16 @@ andalus    Andalusian i-bVII-bVI-V      = Im bVII bVI V7
 736        Gospel 7-3-6                 = VIIm7b5 III7b9 VIm7
 canon      Pachelbel canon              = I V VIm IIIm IV I IV V
 blues12    12-bar blues                 = I7 IV7 I7 I7 IV7 IV7 I7 I7 V7 IV7 I7 V7
+
+# Diminished & more
+4dim1      IV-#IVdim-I                  = IVmaj7 #IVdim7 Imaj7
+dimdesc    Descending dim iii-biii-ii-V = IIIm7 bIIIdim7 IIm7 V7
+dim71      viidim resolving to I        = VIIdim7 Imaj7
+sixdim     Barry 6th-diminished vamp    = I6 IIdim7 I6 IIdim7
+ctdim      Common-tone dim              = Imaj7 Idim7 Imaj7
+cliche     Minor line cliche            = Im ImMaj7 Im7 Im6
+bridge     Rhythm-changes bridge        = III7 VI7 II7 V7
+aug51      V7#5 to I                    = V7#5 Imaj7
 `;
 
 /* ---------- config ---------- */
@@ -748,6 +758,118 @@ blues12 A 0
 blues12 D 0
 blues12 G 0
 
+# IV-#IVdim-I
+4dim1 C 0
+4dim1 F 0
+4dim1 Bb 0
+4dim1 Eb 0
+4dim1 Ab 0
+4dim1 Db 0
+4dim1 Gb 0
+4dim1 B 0
+4dim1 E 0
+4dim1 A 0
+4dim1 D 0
+4dim1 G 0
+
+# Descending dim iii-biii-ii-V
+dimdesc C 0
+dimdesc F 0
+dimdesc Bb 0
+dimdesc Eb 0
+dimdesc Ab 0
+dimdesc Db 0
+dimdesc Gb 0
+dimdesc B 0
+dimdesc E 0
+dimdesc A 0
+dimdesc D 0
+dimdesc G 0
+
+# viidim resolving to I
+dim71 C 0
+dim71 F 0
+dim71 Bb 0
+dim71 Eb 0
+dim71 Ab 0
+dim71 Db 0
+dim71 Gb 0
+dim71 B 0
+dim71 E 0
+dim71 A 0
+dim71 D 0
+dim71 G 0
+
+# Barry 6th-diminished vamp
+sixdim C 0
+sixdim F 0
+sixdim Bb 0
+sixdim Eb 0
+sixdim Ab 0
+sixdim Db 0
+sixdim Gb 0
+sixdim B 0
+sixdim E 0
+sixdim A 0
+sixdim D 0
+sixdim G 0
+
+# Common-tone dim
+ctdim C 0
+ctdim F 0
+ctdim Bb 0
+ctdim Eb 0
+ctdim Ab 0
+ctdim Db 0
+ctdim Gb 0
+ctdim B 0
+ctdim E 0
+ctdim A 0
+ctdim D 0
+ctdim G 0
+
+# Minor line cliche
+cliche A 0
+cliche D 0
+cliche G 0
+cliche C 0
+cliche F 0
+cliche Bb 0
+cliche Eb 0
+cliche G# 0
+cliche C# 0
+cliche F# 0
+cliche B 0
+cliche E 0
+
+# Rhythm-changes bridge
+bridge C 0
+bridge F 0
+bridge Bb 0
+bridge Eb 0
+bridge Ab 0
+bridge Db 0
+bridge Gb 0
+bridge B 0
+bridge E 0
+bridge A 0
+bridge D 0
+bridge G 0
+
+# V7#5 to I
+aug51 C 0
+aug51 F 0
+aug51 Bb 0
+aug51 Eb 0
+aug51 Ab 0
+aug51 Db 0
+aug51 Gb 0
+aug51 B 0
+aug51 E 0
+aug51 A 0
+aug51 D 0
+aug51 G 0
+
 # Fixed custom exercises: custom "name" "symbols to show" weight
 custom "example lick" "Dm9 G13 C6/9" 0
 `;
@@ -1014,6 +1136,8 @@ const STYLES = [
   ['gospel',    [['736', KEYS_MAJ12, 80], ['4m1', KEYS_MAJ12, 60], ['rich251', KEYS_MAJ12, 50],
                  ['min251', KEYS_MIN12, 40]]],
   ['classical', [['canon', KEYS_MAJ12, 70], ['andalus', KEYS_MIN12, 50], ['51', KEYS_MAJ12, 60]]],
+  ['dim',       [['dimpass', KEYS_MAJ12, 80], ['4dim1', KEYS_MAJ12, 80], ['dimdesc', KEYS_MAJ12, 70],
+                 ['dim71', KEYS_MAJ12, 60], ['sixdim', KEYS_MAJ12, 70], ['ctdim', KEYS_MAJ12, 50]]],
 ];
 
 function addPresets(el, list) {
@@ -1086,6 +1210,14 @@ function selfTest() {
     ['736',     'C',  'Bm7♭5 E7♭9 Am7'],
     ['canon',   'C',  'C G Am Em F C F G'],
     ['blues12', 'C',  'C7 F7 C7 C7 F7 F7 C7 C7 G7 F7 C7 G7'],
+    ['4dim1',   'C',  'Fmaj7 F♯dim7 Cmaj7'],
+    ['dimdesc', 'C',  'Em7 E♭dim7 Dm7 G7'],
+    ['dim71',   'C',  'Bdim7 Cmaj7'],
+    ['sixdim',  'C',  'C6 Ddim7 C6 Ddim7'],
+    ['ctdim',   'C',  'Cmaj7 Cdim7 Cmaj7'],
+    ['cliche',  'A',  'Am AmMaj7 Am7 Am6'],
+    ['bridge',  'C',  'E7 A7 D7 G7'],
+    ['aug51',   'C',  'G7♯5 Cmaj7'],
   ];
   const lines = cases.map(([p, k, want]) => {
     const g = got(p, k);
